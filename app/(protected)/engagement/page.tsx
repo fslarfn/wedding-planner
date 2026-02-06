@@ -113,7 +113,7 @@ export default function EngagementPage() {
                         <div className="flex flex-wrap gap-4 text-sm font-medium">
                             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20">
                                 <Clock className="w-4 h-4 text-blue-300" />
-                                03 April 2026
+                                04 April 2026
                             </div>
                             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/20">
                                 <MapPin className="w-4 h-4 text-blue-300" />
@@ -188,7 +188,7 @@ export default function EngagementPage() {
                                     <Input placeholder="Catatan (Optional)" className="flex-1" value={newGuest.note} onChange={e => setNewGuest({ ...newGuest, note: e.target.value })} />
                                 </div>
                             </div>
-                            <DialogFooter><Button onClick={addGuest} className="bg-[#D8B0B0]">Simpan</Button></DialogFooter>
+                            <DialogFooter><Button onClick={addGuest} className="bg-blue-600 hover:bg-blue-700">Simpan</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </TabsContent>
@@ -198,7 +198,7 @@ export default function EngagementPage() {
                     <Card>
                         <CardHeader className="flex flex-row justify-between items-center">
                             <CardTitle>Menu Makanan & Snack</CardTitle>
-                            <Button size="sm" className="bg-[#D8B0B0]" onClick={() => setIsMenuOpen(true)}>+ Tambah</Button>
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsMenuOpen(true)}>+ Tambah</Button>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -237,7 +237,7 @@ export default function EngagementPage() {
                                     <option value="Snack">Snack / Minuman</option>
                                 </select>
                             </div>
-                            <DialogFooter><Button onClick={addMenu} className="bg-[#D8B0B0]">Simpan</Button></DialogFooter>
+                            <DialogFooter><Button onClick={addMenu} className="bg-blue-600 hover:bg-blue-700">Simpan</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </TabsContent>
@@ -250,7 +250,7 @@ export default function EngagementPage() {
                                 <CardTitle>Realisasi Pengeluaran</CardTitle>
                                 <p className="text-sm text-gray-500">Total: <span className="font-bold text-gray-900">{formatRupiah(totalExpense)}</span></p>
                             </div>
-                            <Button size="sm" className="bg-[#D8B0B0]" onClick={() => setIsExpenseOpen(true)}>+ Tambah</Button>
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsExpenseOpen(true)}>+ Tambah</Button>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -283,7 +283,7 @@ export default function EngagementPage() {
                                 <Input type="number" placeholder="Harga / Biaya" value={newExpense.cost} onChange={e => setNewExpense({ ...newExpense, cost: e.target.value })} />
                                 <Input placeholder="Catatan (Optional)" value={newExpense.note} onChange={e => setNewExpense({ ...newExpense, note: e.target.value })} />
                             </div>
-                            <DialogFooter><Button onClick={addExpense} className="bg-[#D8B0B0]">Simpan</Button></DialogFooter>
+                            <DialogFooter><Button onClick={addExpense} className="bg-blue-600 hover:bg-blue-700">Simpan</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </TabsContent>
@@ -293,7 +293,7 @@ export default function EngagementPage() {
                     <Card>
                         <CardHeader className="flex flex-row justify-between items-center">
                             <CardTitle>Perbandingan Vendor (Fotografer)</CardTitle>
-                            <Button size="sm" className="bg-[#D8B0B0]" onClick={() => setIsVendorOpen(true)}>+ Vendor</Button>
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700" onClick={() => setIsVendorOpen(true)}>+ Vendor</Button>
                         </CardHeader>
                         <CardContent>
                             <Table>
@@ -327,7 +327,7 @@ export default function EngagementPage() {
                                 </div>
                                 <Input placeholder="Link Portfolio / IG" value={newVendor.reference_link} onChange={e => setNewVendor({ ...newVendor, reference_link: e.target.value })} />
                             </div>
-                            <DialogFooter><Button onClick={addVendor} className="bg-[#D8B0B0]">Simpan</Button></DialogFooter>
+                            <DialogFooter><Button onClick={addVendor} className="bg-blue-600 hover:bg-blue-700">Simpan</Button></DialogFooter>
                         </DialogContent>
                     </Dialog>
                 </TabsContent>
