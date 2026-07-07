@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { LayoutDashboard, Wallet, Users, Heart, BookOpen, LogOut, Gift, FileText, Camera, Store, Image } from "lucide-react"
+import { LayoutDashboard, Wallet, Users, Heart, BookOpen, LogOut, Gift, FileText, Camera, Store, Image, Sparkles } from "lucide-react"
 
 export function Sidebar({ onClose }: { onClose?: () => void }) {
     const pathname = usePathname()
@@ -13,6 +13,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         { href: "/budget", label: "Budget & Progress", icon: Wallet },
         { href: "/savings", label: "Tabungan & Simulasi", icon: Wallet }, // Re-using Wallet icon or find better
         { href: "/guests", label: "Tamu Undangan", icon: Users },
+        { href: "/invitation", label: "Undangan Online", icon: Sparkles },
         { href: "/engagement", label: "Acara Lamaran", icon: Heart },
         { href: "/seserahan", label: "Seserahan", icon: Gift },
         { href: "/kua", label: "Berkas KUA", icon: FileText },

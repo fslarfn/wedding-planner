@@ -41,8 +41,8 @@ export default function DashboardPage() {
             const { data: budgets } = await supabase.from('budgets').select('planned_amount, actual_amount')
 
             // 2. Guests Summary
-            const { count: totalGuests } = await supabase.from('guests').select('id', { count: 'exact' })
-            const { count: distributedGuests } = await supabase.from('guests').select('id', { count: 'exact' }).eq('sent', true)
+            const { count: totalGuests } = await supabase.from('wedding_guests').select('id', { count: 'exact' })
+            const { count: distributedGuests } = await supabase.from('wedding_guests').select('id', { count: 'exact' }).eq('is_invited', true)
 
             // 3. Tasks Summary
             const { count: totalTasks } = await supabase.from('tasks').select('id', { count: 'exact' })

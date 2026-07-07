@@ -6,9 +6,9 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogTrigger } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Image as ImageIcon, Plus, Trash2, ExternalLink, Filter } from "lucide-react"
+import { Image as ImageIcon, Plus, Trash2, ExternalLink, Filter, Pencil } from "lucide-react"
 
 export default function GalleryPage() {
     const [items, setItems] = useState<any[]>([])
@@ -18,6 +18,10 @@ export default function GalleryPage() {
     // Add Item State
     const [isAddOpen, setIsAddOpen] = useState(false)
     const [newItem, setNewItem] = useState({ image_url: "", category: "Attire", caption: "" })
+
+    // Edit Item State
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [editingItem, setEditingItem] = useState<any>(null)
 
     const categories = ["All", "Attire", "Decoration", "Venue", "Makeup", "Invitation", "Other"]
     const formCategories = categories.filter(c => c !== "All")
@@ -38,6 +42,19 @@ export default function GalleryPage() {
         await supabase.from('moodboard_items').insert([newItem])
         setIsAddOpen(false)
         setNewItem({ image_url: "", category: "Attire", caption: "" })
+        fetchGallery()
+    }
+
+    async function handleUpdateItem() {
+        if (!editingItem || !editingItem.image_url) return
+        await supabase.from('moodboard_items').update({
+            image_url: editingItem.image_url,
+            category: editingItem.category,
+            caption: editingItem.caption
+        }).eq('id', editingItem.id)
+
+        setIsEditOpen(false)
+        setEditingItem(null)
         fetchGallery()
     }
 
@@ -107,6 +124,9 @@ export default function GalleryPage() {
                                     <a href={item.image_url} target="_blank" className="p-2 bg-white/20 hover:bg-white/40 text-white rounded-full backdrop-blur-sm transition-colors">
                                         <ExternalLink className="w-4 h-4" />
                                     </a>
+                                    <button onClick={() => { setEditingItem(item); setIsEditOpen(true) }} className="p-2 bg-blue-500/80 hover:bg-blue-600 text-white rounded-full backdrop-blur-sm transition-colors">
+                                        <Pencil className="w-4 h-4" />
+                                    </button>
                                     <button onClick={() => handleDelete(item.id)} className="p-2 bg-red-500/80 hover:bg-red-600 text-white rounded-full backdrop-blur-sm transition-colors">
                                         <Trash2 className="w-4 h-4" />
                                     </button>
@@ -120,12 +140,58 @@ export default function GalleryPage() {
             {/* Add Item Dialog */}
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
                 <DialogContent>
-                    <DialogHeader><DialogTitle>Tambah ke Moodboard</DialogTitle></DialogHeader>
+                    <DialogHeader>
+                        <DialogTitle>Tambah ke Moodboard</DialogTitle>
+                        <DialogDescription>
+                            Masukkan URL gambar dari Pinterest atau sumber lain.
+                        </DialogDescription>
+                    </DialogHeader>
                     <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             <label className="text-xs font-semibold">URL Gambar</label>
-                            <Input placeholder="https://pinterest.com/..." value={newItem.image_url} onChange={e => setNewItem({ ...newItem, image_url: e.target.value })} />
-                            <p className="text-[10px] text-slate-400">Copy link gambar (klik kanan copy image address) dari Pinterest/Instagram.</p>
+                            <Input
+                                placeholder="https://i.pinimg.com/..."
+                                value={newItem.image_url}
+                                onChange={e => setNewItem({ ...newItem, image_url: e.target.value })}
+                            />
+
+                            {/* Tips Alert */}
+                            <div className="bg-blue-50 p-3 rounded-lg text-[11px] text-blue-700 leading-relaxed border border-blue-100">
+                                <p className="font-bold mb-1">💡 Cara ambil gambar dari Pinterest/Instagram:</p>
+                                <ul className="list-disc pl-4 space-y-1">
+                                    <li>Jangan copy link dari address bar browser.</li>
+                                    <li><strong>Klik Kanan</strong> pada gambar &rarr; Pilih <strong>"Copy Image Address"</strong> (Salin Alamat Gambar).</li>
+                                    <li>Pastikan link biasanya berakhiran <code>.jpg</code>, <code>.png</code>, atau <code>.webp</code>.</li>
+                                </ul>
+                            </div>
+
+                            {/* Image Preview */}
+                            {newItem.image_url && (
+                                <div className="mt-2 text-center">
+                                    <p className="text-xs font-semibold mb-2 text-slate-500">Preview:</p>
+                                    <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50 min-h-[150px] flex items-center justify-center">
+                                        <img
+                                            src={newItem.image_url}
+                                            alt="Preview"
+                                            className="max-h-[200px] w-auto object-contain"
+                                            onError={(e) => {
+                                                e.currentTarget.style.display = 'none';
+                                                e.currentTarget.parentElement?.classList.add('bg-red-50');
+                                                e.currentTarget.parentElement!.innerHTML += '<div class="text-red-500 text-xs p-4">❌ Gambar tidak muncul.<br/>Link mungkin salah atau diproteksi.<br/>Coba cara "Copy Image Address" di atas.</div>';
+                                            }}
+                                            onLoad={(e) => {
+                                                e.currentTarget.style.display = 'block';
+                                                // Clear error message if any
+                                                const parent = e.currentTarget.parentElement;
+                                                if (parent) {
+                                                    const errorMsg = parent.querySelector('div');
+                                                    if (errorMsg) errorMsg.remove();
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="space-y-2">
                             <label className="text-xs font-semibold">Kategori</label>
@@ -139,6 +205,59 @@ export default function GalleryPage() {
                         </div>
                     </div>
                     <DialogFooter><Button onClick={handleAddItem} className="bg-pink-600 hover:bg-pink-700">Simpan Foto</Button></DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Edit Item Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Inspirasi</DialogTitle>
+                        <DialogDescription>
+                            Ubah detail atau link gambar moodboard.
+                        </DialogDescription>
+                    </DialogHeader>
+                    {editingItem && (
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-3">
+                                <label className="text-xs font-semibold">URL Gambar</label>
+                                <Input
+                                    value={editingItem.image_url}
+                                    onChange={e => setEditingItem({ ...editingItem, image_url: e.target.value })}
+                                />
+                                {editingItem.image_url && (
+                                    <div className="mt-2 text-center">
+                                        <div className="relative rounded-lg overflow-hidden border border-slate-200 bg-slate-50 min-h-[150px] flex items-center justify-center">
+                                            <img
+                                                src={editingItem.image_url}
+                                                alt="Preview"
+                                                className="max-h-[200px] w-auto object-contain"
+                                                onError={(e) => {
+                                                    e.currentTarget.style.display = 'none';
+                                                    e.currentTarget.parentElement?.classList.add('bg-red-50');
+                                                }}
+                                                onLoad={(e) => {
+                                                    e.currentTarget.style.display = 'block';
+                                                    e.currentTarget.parentElement?.classList.remove('bg-red-50');
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold">Kategori</label>
+                                <select className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm" value={editingItem.category} onChange={e => setEditingItem({ ...editingItem, category: e.target.value })}>
+                                    {formCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold">Keterangan / Caption</label>
+                                <Input value={editingItem.caption || ""} onChange={e => setEditingItem({ ...editingItem, caption: e.target.value })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter><Button onClick={handleUpdateItem} className="bg-blue-600 hover:bg-blue-700">Update Foto</Button></DialogFooter>
                 </DialogContent>
             </Dialog>
         </div>

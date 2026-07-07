@@ -345,7 +345,8 @@ export default function GuestPage() {
                                                                     alert("Nomor HP belum diisi!");
                                                                     return;
                                                                 }
-                                                                const message = `Halo ${guest.name}, kami mengundang Anda ke acara pernikahan kami. Link Undangan: https://undangan-kamu.com/to/${guest.id}`;
+                                                                const invitationUrl = `${window.location.origin}/undangan?to=${encodeURIComponent(guest.name)}`;
+                                                                const message = `Halo ${guest.name}, kami mengundang Anda ke acara pernikahan kami. Link Undangan: ${invitationUrl}`;
                                                                 const url = `https://wa.me/${guest.phone}?text=${encodeURIComponent(message)}`;
                                                                 window.open(url, '_blank');
                                                             }}

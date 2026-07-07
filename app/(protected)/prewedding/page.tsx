@@ -6,7 +6,8 @@ import { formatRupiah, cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Camera, Calendar, MapPin, CheckCircle, Clock } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import { Camera, Calendar, MapPin, CheckCircle, Clock, Pencil, Trash2, Plus } from "lucide-react"
 import { format } from "date-fns"
 import { id } from "date-fns/locale"
 
@@ -19,6 +20,10 @@ export default function PreWeddingPage() {
     const [vendorName, setVendorName] = useState("")
     const [cost, setCost] = useState("")
     const [date, setDate] = useState("")
+
+    // Edit State
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [editingItem, setEditingItem] = useState<any>(null)
 
     useEffect(() => { fetchData() }, [])
 
@@ -45,6 +50,26 @@ export default function PreWeddingPage() {
     async function updateStatus(id: string, current: string) {
         const next = current === 'Booked' ? 'Done' : 'Booked'
         await supabase.from('prewedding').update({ status: next }).eq('id', id)
+        fetchData()
+    }
+
+    async function handleDelete(id: string) {
+        if (confirm("Hapus agenda ini?")) {
+            await supabase.from('prewedding').delete().eq('id', id)
+            fetchData()
+        }
+    }
+
+    async function handleUpdate() {
+        if (!editingItem) return
+        await supabase.from('prewedding').update({
+            item_name: editingItem.item_name,
+            vendor_name: editingItem.vendor_name,
+            cost: parseFloat(editingItem.cost) || 0,
+            date: editingItem.date || null
+        }).eq('id', editingItem.id)
+        setIsEditOpen(false)
+        setEditingItem(null)
         fetchData()
     }
 
@@ -80,14 +105,24 @@ export default function PreWeddingPage() {
                                         </div>
                                         <p className="mt-3 font-semibold text-blue-600">{formatRupiah(item.cost)}</p>
                                     </div>
-                                    <Button
-                                        size="sm"
-                                        variant={item.status === 'Done' ? "outline" : "default"}
-                                        className={cn(item.status === 'Done' ? "text-emerald-600 border-emerald-200" : "bg-slate-800 hover:bg-slate-900")}
-                                        onClick={() => updateStatus(item.id, item.status)}
-                                    >
-                                        {item.status === 'Done' ? "Selesai" : "Mark Done"}
-                                    </Button>
+                                    <div className="flex flex-col gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant={item.status === 'Done' ? "outline" : "default"}
+                                            className={cn("w-full", item.status === 'Done' ? "text-emerald-600 border-emerald-200" : "bg-slate-800 hover:bg-slate-900")}
+                                            onClick={() => updateStatus(item.id, item.status)}
+                                        >
+                                            {item.status === 'Done' ? "Selesai" : "Mark Done"}
+                                        </Button>
+                                        <div className="flex gap-1 justify-end">
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-blue-500 hover:bg-blue-50" onClick={() => { setEditingItem(item); setIsEditOpen(true) }}>
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => handleDelete(item.id)}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        </div>
+                                    </div>
                                 </CardContent>
                             </Card>
                         </div>
@@ -110,6 +145,39 @@ export default function PreWeddingPage() {
                     </Card>
                 </div>
             </div>
+
+            {/* Edit Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Edit Agenda Pre-Wedding</DialogTitle>
+                        <DialogDescription>Perbarui detail acara, vendor, atau biaya.</DialogDescription>
+                    </DialogHeader>
+                    {editingItem && (
+                        <div className="space-y-3 py-4">
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold">Nama Kegiatan</label>
+                                <Input value={editingItem.item_name} onChange={e => setEditingItem({ ...editingItem, item_name: e.target.value })} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold">Vendor / Lokasi</label>
+                                <Input value={editingItem.vendor_name || ""} onChange={e => setEditingItem({ ...editingItem, vendor_name: e.target.value })} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold">Biaya (Rp)</label>
+                                <Input type="number" value={editingItem.cost} onChange={e => setEditingItem({ ...editingItem, cost: e.target.value })} />
+                            </div>
+                            <div className="space-y-1">
+                                <label className="text-xs font-semibold">Tanggal</label>
+                                <Input type="date" value={editingItem.date || ""} onChange={e => setEditingItem({ ...editingItem, date: e.target.value })} />
+                            </div>
+                        </div>
+                    )}
+                    <DialogFooter>
+                        <Button onClick={handleUpdate} className="bg-blue-600 hover:bg-blue-700">Simpan Perubahan</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
