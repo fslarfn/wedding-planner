@@ -372,6 +372,27 @@ export default function InvitationView() {
                                     </Reveal>
                                 ))}
                             </div>
+
+                            {/* BONUS: MINI GAME */}
+                            <Reveal direction="zoom" className="mt-14 text-center">
+                                <p className="uppercase tracking-[0.3em] text-[11px] mb-1" style={{ color: GOLD }}>Bonus</p>
+                                <h3 className="text-xl mb-2">Mainkan Kisah Cinta Kami</h3>
+                                <p className="text-sm opacity-60 mb-6 font-sans">
+                                    Bantu Faisal menempuh perjalanan menuju Ditta lewat game kecil ini
+                                </p>
+                                <div
+                                    className="mx-auto rounded-xl overflow-hidden shadow-lg border"
+                                    style={{ borderColor: "#00000012", maxWidth: 350 }}
+                                >
+                                    <iframe
+                                        src="/petualangan-cinta.html"
+                                        title="Petualangan Cinta — Faisal & Ditta"
+                                        className="w-full"
+                                        style={{ height: 440, border: 0, display: "block" }}
+                                        loading="lazy"
+                                    />
+                                </div>
+                            </Reveal>
                         </div>
                     </section>
                 )}
