@@ -33,7 +33,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     return (
         <div className="flex flex-col h-full bg-slate-950 text-white border-r border-slate-800">
             <div className="p-6">
-                <h1 className="text-xl font-bold text-blue-500 tracking-wider">Planner Faisal & Ditta</h1>
+                <h1 className="text-xl font-bold text-blue-500 tracking-wider">Planner Ditta & Faisal</h1>
             </div>
 
             <nav className="flex-1 px-4 space-y-2">

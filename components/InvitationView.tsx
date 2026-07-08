@@ -371,7 +371,7 @@ export default function InvitationView() {
                                 childOrder={settings?.bride_child_order}
                                 childLabel="Putri"
                                 instagram={settings?.bride_instagram}
-                                role="Mempelai Wanita"
+                                role="The Bride"
                             />
                         </Reveal>
                         <Reveal direction="zoom" delay={0.2} className="flex justify-center">
@@ -386,7 +386,7 @@ export default function InvitationView() {
                                 childOrder={settings?.groom_child_order}
                                 childLabel="Putra"
                                 instagram={settings?.groom_instagram}
-                                role="Mempelai Pria"
+                                role="The Groom"
                             />
                         </Reveal>
                     </div>
@@ -397,16 +397,16 @@ export default function InvitationView() {
                     <section id="cerita" className="px-8 py-14" style={{ backgroundColor: GREEN_SOFT }}>
                         <div className="max-w-xl mx-auto">
                             <Reveal>
-                                <p className="uppercase tracking-[0.3em] text-[11px] text-center mb-1" style={{ color: GOLD }}>Our Journey</p>
+                                <p className="uppercase tracking-[0.3em] text-[18px] text-center mb-1" style={{ color: GOLD }}>Our Journey</p>
                                 <h2 className="text-center text-2xl mb-10"></h2>
                             </Reveal>
-                            <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-[#B08D57] before:opacity-30">
+                            <div className="space-y-10 relative before:absolute before:left-[8px] before:top-2 before:bottom-2 before:w-px before:bg-[#B08D57] before:opacity-30">
                                 {settings.love_story.map((item: LoveStoryItem, idx: number) => (
-                                    <Reveal key={idx} direction={idx % 2 === 0 ? "right" : "left"} className="relative pl-8">
-                                        <span className="absolute left-0 top-1.5 w-3.5 h-3.5 rounded-full ring-4" style={{ backgroundColor: GOLD, ["--tw-ring-color" as any]: GREEN_SOFT }} />
-                                        <p className="text-xs font-bold uppercase tracking-wide" style={{ color: GOLD }}>{item.date}</p>
-                                        <h3 className="text-xl mt-1">{item.title}</h3>
-                                        <p className="text-sm opacity-70 mt-2 leading-relaxed font-sans">{item.description}</p>
+                                    <Reveal key={idx} direction={idx % 2 === 0 ? "right" : "left"} className="relative pl-9">
+                                        <span className="absolute left-0 top-2 w-4 h-4 rounded-full ring-4" style={{ backgroundColor: GOLD, ["--tw-ring-color" as any]: GREEN_SOFT }} />
+                                        <p className="text-sm font-bold uppercase tracking-wide" style={{ color: GOLD }}>{item.date}</p>
+                                        <h3 className="text-2xl md:text-3xl mt-1.5">{item.title}</h3>
+                                        <p className="text-base opacity-70 mt-3 leading-relaxed font-sans">{item.description}</p>
                                     </Reveal>
                                 ))}
                             </div>
@@ -424,7 +424,7 @@ export default function InvitationView() {
                                 >
                                     <iframe
                                         src="/petualangan-cinta.html"
-                                        title="Petualangan Cinta — Faisal & Ditta"
+                                        title="Petualangan Cinta — Ditta & Faisal"
                                         className="w-full"
                                         style={{ height: 440, border: 0, display: "block" }}
                                         loading="lazy"
