@@ -9,7 +9,6 @@ import { cn } from "@/lib/utils"
 import {
     Heart, MapPin, Calendar, Copy, Check, Send, ChevronDown,
     Instagram, Loader2, PartyPopper, Quote as QuoteIcon,
-    Home, BookHeart, CalendarHeart, Images, Gift, MessageCircleHeart,
     X, ChevronLeft, ChevronRight,
 } from "lucide-react"
 
@@ -21,7 +20,6 @@ const playfair = Playfair_Display({ subsets: ["latin"], weight: ["400", "500", "
 const INK = "#2B2B26"
 const CREAM = "#FBF8F2"
 const GREEN = "#24463A"
-const GREEN_OVERLAY = "rgba(18,36,29,0.6)"
 const GREEN_SOFT = "#EEF2ED"
 const GOLD = "#B08D57"
 
@@ -107,22 +105,6 @@ function Reveal({
     )
 }
 
-function LeafDivider() {
-    return (
-        <div className="flex items-center justify-center gap-3 py-2" aria-hidden>
-            <span className="h-px w-10" style={{ backgroundColor: GOLD, opacity: 0.5 }} />
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={GOLD} strokeWidth="1.3">
-                <path d="M12 2 C12 8 8 10 5 10 C5 6 8 2 12 2 Z" />
-                <path d="M12 2 C12 8 16 10 19 10 C19 6 16 2 12 2 Z" />
-                <path d="M12 2 V15" />
-                <path d="M12 22 C12 18 9 16 7 16" />
-                <path d="M12 22 C12 18 15 16 17 16" />
-            </svg>
-            <span className="h-px w-10" style={{ backgroundColor: GOLD, opacity: 0.5 }} />
-        </div>
-    )
-}
-
 function CornerOrnament({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 120 120" className={className} aria-hidden>
@@ -144,7 +126,6 @@ export default function InvitationView() {
     const [loading, setLoading] = useState(true)
     const [isOpened, setIsOpened] = useState(false)
     const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
-    const [activeSection, setActiveSection] = useState("beranda")
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
 
     // RSVP Form
@@ -168,24 +149,6 @@ export default function InvitationView() {
         setNextEventDate((future.length > 0 ? future.sort()[0] : dates.sort()[0]) || null)
     }, [settings])
 
-    // Highlight active nav item based on scroll position
-    useEffect(() => {
-        if (!isOpened) return
-        const ids = ["beranda", "cerita", "acara", "galeri", "amplop", "rsvp"]
-        const sections = ids.map(id => document.getElementById(id)).filter(Boolean) as HTMLElement[]
-
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) setActiveSection(entry.target.id)
-                })
-            },
-            { rootMargin: "-40% 0px -50% 0px", threshold: 0 }
-        )
-        sections.forEach(s => observer.observe(s))
-        return () => observer.disconnect()
-    }, [isOpened, settings, gallery.length])
-
     async function fetchData() {
         setLoading(true)
         const [{ data: settingsData }, { data: galleryData }, { data: wishesData }] = await Promise.all([
@@ -203,10 +166,6 @@ export default function InvitationView() {
 
     function handleOpen() {
         setIsOpened(true)
-    }
-
-    function scrollToSection(id: string) {
-        document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" })
     }
 
     async function handleSubmitRsvp(e: React.FormEvent) {
@@ -243,15 +202,6 @@ export default function InvitationView() {
     const groomNick = settings?.groom_nickname || settings?.groom_name || "Mempelai Pria"
     const brideNick = settings?.bride_nickname || settings?.bride_name || "Mempelai Wanita"
 
-    const navItems = [
-        { id: "beranda", label: "Beranda", icon: Home, show: true },
-        { id: "cerita", label: "Cerita", icon: BookHeart, show: (settings?.love_story?.length || 0) > 0 },
-        { id: "acara", label: "Acara", icon: CalendarHeart, show: true },
-        { id: "galeri", label: "Galeri", icon: Images, show: gallery.length > 0 },
-        { id: "amplop", label: "Kado", icon: Gift, show: (settings?.bank_accounts?.length || 0) > 0 },
-        { id: "rsvp", label: "RSVP", icon: MessageCircleHeart, show: true },
-    ].filter(i => i.show)
-
     return (
         <div className={cn("min-h-dvh w-full", playfair.className)} style={{ backgroundColor: CREAM, color: INK }}>
 
@@ -274,13 +224,13 @@ export default function InvitationView() {
                         ) : (
                             <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(160deg, ${GREEN}, #12241d)` }} />
                         )}
+                        <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-l from-black/75 via-black/25 to-transparent" />
 
                         <div className="relative z-10 h-full w-full flex flex-col md:flex-row">
                             <div className="flex-1" />
 
                             <motion.div
                                 className="relative flex-none md:flex-1 flex flex-col items-center justify-center text-center text-white px-8 py-10 md:px-14 overflow-y-auto"
-                                style={{ backgroundColor: GREEN_OVERLAY }}
                                 exit={{ opacity: 0, y: -24, transition: { duration: 0.6, ease: "easeIn" } }}
                             >
                                 <CornerOrnament className="absolute top-5 left-5 w-12 h-12 opacity-60" />
@@ -321,31 +271,25 @@ export default function InvitationView() {
             {/* ============ MAIN CONTENT ============ */}
             <div className={cn("transition-opacity duration-700 delay-200", isOpened ? "opacity-100" : "opacity-0 pointer-events-none")}>
 
-                {/* HERO */}
-                <section id="beranda" className="relative">
+                {/* HERO (+ Countdown menyatu di foto yang sama, full layar) */}
+                <section id="beranda" className="relative min-h-dvh flex flex-col">
                     {settings?.hero_photo_url ? (
                         <img src={settings.hero_photo_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
                     ) : (
                         <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(160deg, ${GREEN}, #12241d)` }} />
                     )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
-                    <div className="relative z-10 flex flex-col md:flex-row min-h-[70dvh] md:min-h-dvh">
-                        <div className="flex-1" />
-                        <div className="flex-none md:flex-1 flex flex-col items-center justify-center text-center text-white px-8 py-14" style={{ backgroundColor: GREEN_OVERLAY }}>
-                            <p className="uppercase tracking-[0.3em] text-[11px] text-white/70 mb-4">Kami Akan Menikah</p>
-                            <h1 className="text-4xl md:text-5xl">{brideNick} &amp; {groomNick}</h1>
-                            {nextEventDate && <p className="mt-4 text-white/85 text-sm tracking-wide">{formatTanggalPanjang(nextEventDate)}</p>}
-                            <ChevronDown className="w-5 h-5 mt-8 animate-bounce text-white/60" />
-                        </div>
+                    <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center text-white px-8 py-10">
+                        <p className="uppercase tracking-[0.3em] text-[11px] text-white/70 mb-4">Kami Akan Menikah</p>
+                        <h1 className="text-4xl md:text-5xl">{brideNick} &amp; {groomNick}</h1>
+                        {nextEventDate && <p className="mt-4 text-white/85 text-sm tracking-wide">{formatTanggalPanjang(nextEventDate)}</p>}
                     </div>
-                </section>
 
-                {/* SAVE THE DATE / COUNTDOWN */}
-                {nextEventDate && (
-                    <Reveal className="px-8 py-14 text-center">
-                        <div className="max-w-xl mx-auto">
+                    {nextEventDate && (
+                        <Reveal className="relative z-10 px-8 pb-10 text-center text-white">
                             <p className="uppercase tracking-[0.3em] text-[11px] mb-1" style={{ color: GOLD }}>Save The Date</p>
-                            <h2 className="text-2xl mb-6">Menuju Hari Bahagia</h2>
+                            <h2 className="text-xl mb-4">Menuju Hari Bahagia</h2>
                             <div className="flex justify-center gap-2.5">
                                 {[
                                     { label: "Hari", value: countdown.days },
@@ -353,25 +297,28 @@ export default function InvitationView() {
                                     { label: "Menit", value: countdown.minutes },
                                     { label: "Detik", value: countdown.seconds },
                                 ].map((item, i) => (
-                                    <Reveal key={item.label} direction="zoom" delay={i * 0.08} className="rounded-xl px-3 py-3 w-16" style={{ backgroundColor: GREEN_SOFT }}>
-                                        <div className="text-2xl font-semibold" style={{ color: GREEN }}>{item.value}</div>
-                                        <div className="text-[9px] uppercase tracking-wide mt-1 opacity-60">{item.label}</div>
+                                    <Reveal key={item.label} direction="zoom" delay={i * 0.08} className="rounded-xl px-3 py-2.5 w-16 backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+                                        <div className="text-2xl font-semibold text-white">{item.value}</div>
+                                        <div className="text-[9px] uppercase tracking-wide mt-1 text-white/70">{item.label}</div>
                                     </Reveal>
                                 ))}
                             </div>
-                            <LeafDivider />
-                        </div>
-                    </Reveal>
-                )}
+                        </Reveal>
+                    )}
+
+                    <ChevronDown className="relative z-10 w-5 h-5 mx-auto mb-6 animate-bounce text-white/60" />
+                </section>
 
                 {/* QUOTE */}
                 {settings?.quote_text && (
-                    <Reveal className="px-8 py-10 text-center">
-                        <div className="max-w-xl mx-auto">
-                            <QuoteIcon className="w-6 h-6 mx-auto mb-4" style={{ color: GOLD }} />
-                            <p className="text-base leading-relaxed italic opacity-80">{settings.quote_text}</p>
-                        </div>
-                    </Reveal>
+                    <section className="min-h-dvh flex items-center justify-center px-8 py-14 text-center" style={{ backgroundColor: GREEN_SOFT }}>
+                        <Reveal>
+                            <div className="max-w-xl mx-auto">
+                                <QuoteIcon className="w-8 h-8 mx-auto mb-6" style={{ color: GOLD }} />
+                                <p className="text-lg md:text-xl leading-relaxed italic opacity-80">{settings.quote_text}</p>
+                            </div>
+                        </Reveal>
+                    </section>
                 )}
 
                 {/* COUPLE PROFILE */}
@@ -638,28 +585,6 @@ export default function InvitationView() {
                     <p className="text-sm text-white/60 font-sans">Terima kasih atas doa dan restu Anda.</p>
                 </footer>
             </div>
-
-            {/* BOTTOM FLOATING NAV */}
-            {isOpened && (
-                <nav className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 flex gap-1 bg-white/95 backdrop-blur-sm shadow-xl rounded-full px-2 py-2 font-sans">
-                    {navItems.map(item => {
-                        const Icon = item.icon
-                        const isActive = activeSection === item.id
-                        return (
-                            <button
-                                key={item.id}
-                                onClick={() => scrollToSection(item.id)}
-                                className="flex flex-col items-center justify-center w-12 h-12 rounded-full transition-colors"
-                                style={isActive ? { backgroundColor: GREEN, color: "white" } : { color: GREEN }}
-                                title={item.label}
-                            >
-                                <Icon className="w-4 h-4" />
-                                <span className="text-[8px] mt-0.5">{item.label}</span>
-                            </button>
-                        )
-                    })}
-                </nav>
-            )}
 
             {/* GALLERY LIGHTBOX */}
             <AnimatePresence>
