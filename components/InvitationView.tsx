@@ -1,18 +1,19 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
-import { Playfair_Display } from "next/font/google"
+import { Playfair_Display, Great_Vibes } from "next/font/google"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 import {
     Heart, MapPin, Calendar, Copy, Check, Send, ChevronDown,
-    Instagram, Loader2, PartyPopper, Quote as QuoteIcon,
-    X, ChevronLeft, ChevronRight,
+    Instagram, Loader2, PartyPopper, Quote as QuoteIcon, Coffee,
+    X, ChevronLeft, ChevronRight, Volume2, VolumeX,
 } from "lucide-react"
 
 const playfair = Playfair_Display({ subsets: ["latin"], weight: ["400", "500", "600", "700"] })
+const scriptFont = Great_Vibes({ subsets: ["latin"], weight: "400" })
 
 // Palet & mood: krem hangat + hijau tua + aksen emas — terinspirasi gaya
 // "luxury botanical" undangan digital, dipadu ornamen & interaksi buatan sendiri
@@ -127,6 +128,8 @@ export default function InvitationView() {
     const [isOpened, setIsOpened] = useState(false)
     const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
+    const [musicPlaying, setMusicPlaying] = useState(false)
+    const audioRef = useRef<HTMLAudioElement>(null)
 
     // RSVP Form
     const [form, setForm] = useState({ guest_name: guestName, attendance: "Hadir", pax: "1", message: "" })
@@ -166,6 +169,19 @@ export default function InvitationView() {
 
     function handleOpen() {
         setIsOpened(true)
+        if (audioRef.current) {
+            audioRef.current.play().then(() => setMusicPlaying(true)).catch(() => setMusicPlaying(false))
+        }
+    }
+
+    function toggleMusic() {
+        if (!audioRef.current) return
+        if (musicPlaying) {
+            audioRef.current.pause()
+            setMusicPlaying(false)
+        } else {
+            audioRef.current.play().then(() => setMusicPlaying(true)).catch(() => { })
+        }
     }
 
     async function handleSubmitRsvp(e: React.FormEvent) {
@@ -204,6 +220,8 @@ export default function InvitationView() {
 
     return (
         <div className={cn("min-h-dvh w-full", playfair.className)} style={{ backgroundColor: CREAM, color: INK }}>
+
+            {settings?.music_url && <audio ref={audioRef} src={settings.music_url} loop />}
 
             {/* ============ COVER / OPENING GATE ============ */}
             <AnimatePresence>
@@ -281,7 +299,7 @@ export default function InvitationView() {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/20 to-transparent" />
 
                     <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center text-white px-8 py-10">
-                        <p className="uppercase tracking-[0.3em] text-[11px] text-white/70 mb-4">Kami Akan Menikah</p>
+                        <p className="uppercase tracking-[0.3em] text-[11px] text-white/70 mb-4"></p>
                         <h1 className="text-4xl md:text-5xl">{brideNick} &amp; {groomNick}</h1>
                         {nextEventDate && <p className="mt-4 text-white/85 text-sm tracking-wide">{formatTanggalPanjang(nextEventDate)}</p>}
                     </div>
@@ -311,12 +329,32 @@ export default function InvitationView() {
 
                 {/* QUOTE */}
                 {settings?.quote_text && (
-                    <section className="min-h-dvh flex items-center justify-center px-8 py-14 text-center" style={{ backgroundColor: GREEN_SOFT }}>
-                        <Reveal>
-                            <div className="max-w-xl mx-auto">
-                                <QuoteIcon className="w-8 h-8 mx-auto mb-6" style={{ color: GOLD }} />
-                                <p className="text-lg md:text-xl leading-relaxed italic opacity-80">{settings.quote_text}</p>
-                            </div>
+                    <section className={cn(
+                        "relative min-h-dvh flex px-8 pb-14 text-center overflow-hidden",
+                        settings?.quote_image_url ? "items-start pt-20 md:pt-24" : "items-center py-14"
+                    )}>
+                        {settings?.quote_image_url ? (
+                            <>
+                                <img src={settings.quote_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/25" />
+                            </>
+                        ) : (
+                            <div className="absolute inset-0" style={{ backgroundColor: GREEN_SOFT }} />
+                        )}
+                        <Reveal
+                            className={cn(
+                                "relative z-10 max-w-xl mx-auto",
+                                settings?.quote_image_url && "rounded-2xl px-6 py-8 backdrop-blur-md"
+                            )}
+                            style={settings?.quote_image_url ? { backgroundColor: "rgba(20,20,18,0.45)" } : undefined}
+                        >
+                            <QuoteIcon className="w-8 h-8 mx-auto mb-6" style={{ color: GOLD }} />
+                            <p className={cn(
+                                "text-lg md:text-xl leading-relaxed italic",
+                                settings?.quote_image_url ? "text-white" : "opacity-80"
+                            )}>
+                                {settings.quote_text}
+                            </p>
                         </Reveal>
                     </section>
                 )}
@@ -360,7 +398,7 @@ export default function InvitationView() {
                         <div className="max-w-xl mx-auto">
                             <Reveal>
                                 <p className="uppercase tracking-[0.3em] text-[11px] text-center mb-1" style={{ color: GOLD }}>Our Journey</p>
-                                <h2 className="text-center text-2xl mb-10">Cerita Cinta Kami</h2>
+                                <h2 className="text-center text-2xl mb-10"></h2>
                             </Reveal>
                             <div className="space-y-8 relative before:absolute before:left-[7px] before:top-2 before:bottom-2 before:w-px before:bg-[#B08D57] before:opacity-30">
                                 {settings.love_story.map((item: LoveStoryItem, idx: number) => (
@@ -599,13 +637,52 @@ export default function InvitationView() {
                     </div>
                 </section>
 
+                {/* CLOSING / TERIMA KASIH */}
+                <section className="relative min-h-dvh flex items-center justify-center px-8 py-16 text-center overflow-hidden text-white">
+                    {settings?.closing_photo_url ? (
+                        <img src={settings.closing_photo_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                    ) : (
+                        <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(160deg, ${GREEN}, #12241d)` }} />
+                    )}
+                    <div className="absolute inset-0 bg-black/45" />
+
+                    <Reveal className="relative z-10 max-w-md mx-auto">
+                        <p className={cn("text-5xl md:text-6xl mb-6", scriptFont.className)}>Terima Kasih</p>
+                        <p className="text-sm leading-relaxed text-white/90 font-sans">
+                            Merupakan suatu kebahagiaan dan kehormatan bagi kami, apabila Bapak/Ibu/Saudara/i,
+                            berkenan hadir dan memberikan do&apos;a restu kepada kami.
+                        </p>
+                        <p className="text-sm font-bold text-white mt-5 mb-8 font-sans">
+                            Wassalamu&apos;alaikum warahmatullahi wabarakatuh
+                        </p>
+
+                        <p className="uppercase tracking-[0.3em] text-[11px] text-white/70 mb-2 font-sans">Kami yang Berbahagia</p>
+                        <p className="text-3xl italic">{brideNick} &amp; {groomNick}</p>
+                    </Reveal>
+                </section>
+
                 {/* FOOTER */}
-                <footer className="px-8 py-14 text-center text-white" style={{ backgroundColor: GREEN }}>
-                    <Heart className="w-6 h-6 mx-auto mb-3" style={{ color: GOLD }} />
-                    <p className="text-2xl mb-2">{brideNick} &amp; {groomNick}</p>
-                    <p className="text-sm text-white/60 font-sans">Terima kasih atas doa dan restu Anda.</p>
+                <footer className="px-8 py-6 text-center font-sans" style={{ backgroundColor: "#12241d" }}>
+                    <p className="text-xs text-white/50 flex items-center justify-center gap-1.5 flex-wrap">
+                        <Coffee className="w-3.5 h-3.5" style={{ color: GOLD }} />
+                        Undangan online ini dibuat oleh kami berdua, dengan penuh suka cita, di Stuja Coffee.
+                    </p>
                 </footer>
             </div>
+
+            {/* MUSIC TOGGLE */}
+            {isOpened && settings?.music_url && (
+                <button
+                    onClick={toggleMusic}
+                    className="fixed top-[calc(1.25rem+env(safe-area-inset-top))] right-5 z-40 w-10 h-10 rounded-full flex items-center justify-center shadow-lg text-white"
+                    style={{ backgroundColor: GREEN }}
+                    title={musicPlaying ? "Matikan musik" : "Putar musik"}
+                >
+                    <div className={cn(musicPlaying && "animate-spin")} style={{ animationDuration: "6s" }}>
+                        {musicPlaying ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                    </div>
+                </button>
+            )}
 
             {/* GALLERY LIGHTBOX */}
             <AnimatePresence>

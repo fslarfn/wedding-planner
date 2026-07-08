@@ -22,8 +22,8 @@ const emptySettings = {
     id: "",
     groom_name: "", groom_nickname: "", groom_parents: "", groom_instagram: "", groom_child_order: "",
     bride_name: "", bride_nickname: "", bride_parents: "", bride_instagram: "", bride_child_order: "",
-    cover_photo_url: "", hero_photo_url: "", quote_text: "",
-    bride_closeup_url: "", groom_closeup_url: "",
+    cover_photo_url: "", hero_photo_url: "", quote_text: "", quote_image_url: "", closing_photo_url: "",
+    bride_closeup_url: "", groom_closeup_url: "", music_url: "",
     love_story: [] as LoveStoryItem[],
     akad_date: "", akad_time: "", akad_venue: "", akad_address: "", akad_maps_url: "",
     resepsi_date: "", resepsi_time: "", resepsi_venue: "", resepsi_address: "", resepsi_maps_url: "",
@@ -40,9 +40,12 @@ export default function InvitationEditorPage() {
 
     const coverInputRef = useRef<HTMLInputElement>(null)
     const heroInputRef = useRef<HTMLInputElement>(null)
+    const quoteInputRef = useRef<HTMLInputElement>(null)
+    const closingInputRef = useRef<HTMLInputElement>(null)
     const brideCloseupInputRef = useRef<HTMLInputElement>(null)
     const groomCloseupInputRef = useRef<HTMLInputElement>(null)
     const galleryInputRef = useRef<HTMLInputElement>(null)
+    const musicInputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         fetchAll()
@@ -81,7 +84,7 @@ export default function InvitationEditorPage() {
     }
 
     // --- IMAGE UPLOAD ---
-    async function uploadImage(file: File, field: "cover_photo_url" | "hero_photo_url" | "bride_closeup_url" | "groom_closeup_url") {
+    async function uploadImage(file: File, field: "cover_photo_url" | "hero_photo_url" | "quote_image_url" | "closing_photo_url" | "bride_closeup_url" | "groom_closeup_url") {
         if (!file.type.startsWith("image/")) {
             alert("File harus berupa gambar.")
             return
@@ -103,6 +106,35 @@ export default function InvitationEditorPage() {
         } finally {
             setUploadingField(null)
         }
+    }
+
+    async function uploadMusic(file: File) {
+        if (!file.type.startsWith("audio/")) {
+            alert("File harus berupa audio (mp3, dll).")
+            return
+        }
+        setUploadingField("music_url")
+        try {
+            const ext = file.name.split(".").pop()
+            const path = `music_url/${Date.now()}.${ext}`
+            const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true })
+            if (uploadError) {
+                alert("Gagal upload musik: " + uploadError.message)
+                return
+            }
+            const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path)
+            const publicUrl = urlData.publicUrl
+
+            set("music_url", publicUrl)
+            await persist({ music_url: publicUrl }, "music_url")
+        } finally {
+            setUploadingField(null)
+        }
+    }
+
+    async function removeMusic() {
+        set("music_url", "")
+        await persist({ music_url: "" }, "music_url")
     }
 
     async function uploadGalleryFiles(files: FileList) {
@@ -271,13 +303,72 @@ export default function InvitationEditorPage() {
 
                     <Card className="shadow-sm">
                         <CardHeader><CardTitle className="text-base">Quote / Ayat Pembuka</CardTitle></CardHeader>
-                        <CardContent>
+                        <CardContent className="space-y-4">
                             <textarea
                                 className="flex w-full rounded-md border border-input bg-background px-3 py-2 text-sm min-h-[90px]"
                                 value={settings.quote_text}
                                 onChange={e => set("quote_text", e.target.value)}
                                 placeholder="Contoh: Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu pasangan..."
                             />
+                            <ImageUploadCard
+                                label="Foto Latar Quote (opsional)"
+                                hint="Gunakan foto potrait (vertikal) — tampil full sebagai latar section quote, seperti foto Hero"
+                                imageUrl={settings.quote_image_url}
+                                uploading={uploadingField === "quote_image_url"}
+                                inputRef={quoteInputRef}
+                                onSelect={(f) => uploadImage(f, "quote_image_url")}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm">
+                        <CardHeader><CardTitle className="text-base">Foto Penutup (Terima Kasih)</CardTitle></CardHeader>
+                        <CardContent>
+                            <ImageUploadCard
+                                label="Foto Latar Penutup (opsional)"
+                                hint="Gunakan foto potrait (vertikal) — tampil full di halaman penutup/Terima Kasih paling akhir"
+                                imageUrl={settings.closing_photo_url}
+                                uploading={uploadingField === "closing_photo_url"}
+                                inputRef={closingInputRef}
+                                onSelect={(f) => uploadImage(f, "closing_photo_url")}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    <Card className="shadow-sm">
+                        <CardHeader><CardTitle className="text-base">Musik Latar (opsional)</CardTitle></CardHeader>
+                        <CardContent className="space-y-3">
+                            <p className="text-xs text-slate-400">Musik akan otomatis diputar saat tamu membuka undangan (bisa dimatikan lewat tombol di halaman undangan)</p>
+                            <input
+                                type="file"
+                                accept="audio/*"
+                                ref={musicInputRef}
+                                className="hidden"
+                                onChange={e => e.target.files?.[0] && uploadMusic(e.target.files[0])}
+                            />
+                            {settings.music_url ? (
+                                <div className="space-y-2">
+                                    <audio controls src={settings.music_url} className="w-full h-10" />
+                                    <div className="flex gap-2">
+                                        <Button variant="outline" size="sm" onClick={() => musicInputRef.current?.click()} disabled={uploadingField === "music_url"}>
+                                            {uploadingField === "music_url" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                                            Ganti Musik
+                                        </Button>
+                                        <Button variant="outline" size="sm" className="text-red-500 hover:text-red-600" onClick={removeMusic}>
+                                            <Trash2 className="w-4 h-4 mr-2" /> Hapus
+                                        </Button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <Button
+                                    variant="outline"
+                                    onClick={() => musicInputRef.current?.click()}
+                                    disabled={uploadingField === "music_url"}
+                                >
+                                    {uploadingField === "music_url" ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                                    {uploadingField === "music_url" ? "Mengunggah..." : "Pilih File Musik (mp3)"}
+                                </Button>
+                            )}
                         </CardContent>
                     </Card>
 
