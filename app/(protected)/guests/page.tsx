@@ -356,7 +356,7 @@ _Bismillahirrahmanirrahim._
 Dengan memohon rahmat dan ridho Allah SWT, kami dengan penuh kebahagiaan ingin berbagi kabar gembira dan memohon doa restu Bapak/Ibu/Saudara/i untuk hadir pada acara pernikahan kami:
 
 *Ditta & Faisal*
-Yang Insya Allah akan dilaksanakan Intimate Wedding pada:
+Yang Insya Allah akan dilaksanakan pada:
 🗓️ Minggu, 16 Agustus 2026
 🕐 11.00 -13.00 WIB
 📍 Aston Imperial Hotel Bekasi
