@@ -346,7 +346,33 @@ export default function GuestPage() {
                                                                     return;
                                                                 }
                                                                 const invitationUrl = `${window.location.origin}/undangan?to=${encodeURIComponent(guest.name)}`;
-                                                                const message = `Halo ${guest.name}, kami mengundang Anda ke acara pernikahan kami. Link Undangan: ${invitationUrl}`;
+                                                                const message = `Kepada Yth.
+Bapak/Ibu/Saudara/i
+${guest.name}
+
+_Assalamu'alaikum warahmatullahi wabarakatuh._
+_Bismillahirrahmanirrahim._
+
+Dengan memohon rahmat dan ridho Allah SWT, kami dengan penuh kebahagiaan ingin berbagi kabar gembira dan memohon doa restu Bapak/Ibu/Saudara/i untuk hadir pada acara pernikahan kami:
+
+*Ditta & Faisal*
+Yang Insya Allah akan dilaksanakan Intimate Wedding pada:
+🗓️ Minggu, 16 Agustus 2026
+🕐 11.00 -13.00 WIB
+📍 Aston Imperial Hotel Bekasi
+Jl. KH. Noer Ali No.177, RT.001/RW.005, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat
+
+Berikut link undangan kami, untuk info lengkap dari acara bisa kunjungi:
+${invitationUrl}
+
+Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu pada acara pernikahan kami
+
+Atas perhatian Bapak/Ibu/Saudara/i, kami sampaikan terima kasih.
+
+_Wassalamu'alaikum warahmatullahi wabarakatuh._
+
+With Love 🤍
+_Ditta & Faisal_`;
                                                                 const url = `https://wa.me/${guest.phone}?text=${encodeURIComponent(message)}`;
                                                                 window.open(url, '_blank');
                                                             }}
