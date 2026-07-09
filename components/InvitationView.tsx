@@ -6,8 +6,9 @@ import { Playfair_Display, Great_Vibes } from "next/font/google"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
+import AmplopDigital from "@/components/AmplopDigital"
 import {
-    Heart, MapPin, Calendar, Copy, Check, Send, ChevronDown,
+    Heart, MapPin, Calendar, Send, ChevronDown,
     Instagram, Loader2, PartyPopper, Quote as QuoteIcon, Coffee,
     X, ChevronLeft, ChevronRight, Volume2, VolumeX,
 } from "lucide-react"
@@ -25,7 +26,6 @@ const GREEN_SOFT = "#EEF2ED"
 const GOLD = "#B08D57"
 
 type LoveStoryItem = { date: string; title: string; description: string }
-type BankAccount = { bank: string; no_rek: string; atas_nama: string }
 type GalleryItem = { id: string; image_url: string; caption: string }
 type Rsvp = { id: string; guest_name: string; attendance: string; pax: number; message: string; created_at: string }
 
@@ -126,7 +126,6 @@ export default function InvitationView() {
     const [wishes, setWishes] = useState<Rsvp[]>([])
     const [loading, setLoading] = useState(true)
     const [isOpened, setIsOpened] = useState(false)
-    const [copiedIdx, setCopiedIdx] = useState<number | null>(null)
     const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
     const [musicPlaying, setMusicPlaying] = useState(false)
     const audioRef = useRef<HTMLAudioElement>(null)
@@ -199,12 +198,6 @@ export default function InvitationView() {
         setSubmitted(true)
         setForm(f => ({ ...f, message: "" }))
         setSubmitting(false)
-    }
-
-    function copyAccount(text: string, idx: number) {
-        navigator.clipboard.writeText(text)
-        setCopiedIdx(idx)
-        setTimeout(() => setCopiedIdx(null), 2000)
     }
 
     if (loading) {
@@ -527,24 +520,9 @@ export default function InvitationView() {
                                     Doa restu Anda adalah karunia terindah. Jika ingin memberi tanda kasih, kami sediakan sarana berikut.
                                 </p>
                             </Reveal>
-                            <div className="space-y-3">
-                                {settings.bank_accounts.map((acc: BankAccount, idx: number) => (
-                                    <Reveal key={idx} className="rounded-xl border p-5 flex items-center justify-between font-sans" style={{ borderColor: "#00000012" }}>
-                                        <div>
-                                            <p className="text-xs uppercase tracking-wide font-bold" style={{ color: GOLD }}>{acc.bank}</p>
-                                            <p className="font-mono text-lg mt-1">{acc.no_rek}</p>
-                                            <p className="text-xs opacity-50 mt-0.5">a.n. {acc.atas_nama}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => copyAccount(acc.no_rek, idx)}
-                                            className="p-2.5 rounded-full transition-colors"
-                                            style={{ backgroundColor: GREEN_SOFT }}
-                                        >
-                                            {copiedIdx === idx ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" style={{ color: GREEN }} />}
-                                        </button>
-                                    </Reveal>
-                                ))}
-                            </div>
+                            <Reveal direction="zoom">
+                                <AmplopDigital accounts={settings.bank_accounts} brideNick={brideNick} groomNick={groomNick} />
+                            </Reveal>
                         </div>
                     </section>
                 )}
