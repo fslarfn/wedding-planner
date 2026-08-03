@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
+import { compressImage } from "@/lib/compressImage"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -91,9 +92,10 @@ export default function InvitationEditorPage() {
         }
         setUploadingField(field)
         try {
-            const ext = file.name.split(".").pop()
+            const compressed = await compressImage(file)
+            const ext = compressed.name.split(".").pop() || "jpg"
             const path = `${field}/${Date.now()}.${ext}`
-            const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true })
+            const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, compressed, { upsert: true })
             if (uploadError) {
                 alert("Gagal upload foto: " + uploadError.message)
                 return
@@ -142,9 +144,10 @@ export default function InvitationEditorPage() {
         try {
             for (const file of Array.from(files)) {
                 if (!file.type.startsWith("image/")) continue
-                const ext = file.name.split(".").pop()
+                const compressed = await compressImage(file)
+                const ext = compressed.name.split(".").pop() || "jpg"
                 const path = `gallery/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-                const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, file)
+                const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, compressed)
                 if (uploadError) continue
                 const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(path)
 
