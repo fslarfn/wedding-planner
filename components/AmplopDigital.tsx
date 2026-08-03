@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { Montserrat } from "next/font/google"
 import { cn } from "@/lib/utils"
 
@@ -104,6 +105,12 @@ const SPR_BRIDE_WAVE = [
     "....kbbk..kbbk....",
 ]
 
+// Ukuran intrinsik canvas chibi. Wajib di-set di JSX: tanpa ini canvas memakai
+// default 300x150 sebelum digambar, dan popup jadi lebih tinggi dari jarak sembunyinya.
+const CHIBI_SCALE = 4
+const CHIBI_W = SPR_BRIDE_IDLE[0].length * CHIBI_SCALE
+const CHIBI_H = SPR_BRIDE_IDLE.length * CHIBI_SCALE
+
 function drawChibi(canvas: HTMLCanvasElement | null, rows: string[], scale: number) {
     if (!canvas) return
     canvas.width = rows[0].length * scale
@@ -134,6 +141,9 @@ export default function AmplopDigital({
     const [thanksVisible, setThanksVisible] = useState(false)
     const [thanksMsg, setThanksMsg] = useState(THANK_MESSAGES[0])
     const [particles, setParticles] = useState<HeartParticle[]>([])
+    const [mounted, setMounted] = useState(false)
+
+    useEffect(() => setMounted(true), [])
 
     const sceneRef = useRef<HTMLDivElement>(null)
     const brideCanvasRef = useRef<HTMLCanvasElement>(null)
@@ -259,8 +269,8 @@ export default function AmplopDigital({
                 .amplop-digital-root .bank-card.alt .copy-btn{background:#2E2416;color:#FAF7EF}
                 .amplop-digital-root .copy-btn:active{transform:scale(.94)}
                 .amplop-digital-root .copy-btn.copied{background:#5F8F6A}
-                .amplop-digital-root .thanks-pop{position:fixed;left:50%;bottom:-240px;transform:translateX(-50%);z-index:98;display:flex;flex-direction:column;align-items:center;transition:bottom .55s cubic-bezier(.2,1.1,.3,1);pointer-events:none}
-                .amplop-digital-root .thanks-pop.show{bottom:18px}
+                .amplop-digital-root .thanks-pop{position:fixed;left:50%;bottom:18px;z-index:98;display:flex;flex-direction:column;align-items:center;pointer-events:none;opacity:0;visibility:hidden;transform:translateX(-50%) translateY(calc(100% + 40px));transition:transform .55s cubic-bezier(.2,1.1,.3,1),opacity .35s ease,visibility 0s linear .55s}
+                .amplop-digital-root .thanks-pop.show{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);transition:transform .55s cubic-bezier(.2,1.1,.3,1),opacity .3s ease,visibility 0s}
                 .amplop-digital-root .bubble{background:#FFFDF7;border:1px solid #D8C79A;border-radius:14px;padding:12px 18px;max-width:290px;text-align:center;font-size:14px;font-style:italic;line-height:1.5;color:#2E2416;box-shadow:0 10px 28px rgba(46,36,22,.22);position:relative;margin-bottom:12px;font-family:Georgia,serif}
                 .amplop-digital-root .bubble::after{content:"";position:absolute;left:50%;bottom:-7px;transform:translateX(-50%) rotate(45deg);width:12px;height:12px;background:#FFFDF7;border-right:1px solid #D8C79A;border-bottom:1px solid #D8C79A}
                 .amplop-digital-root .bubble .sign{display:block;margin-top:5px;font-style:normal;font-size:8.5px;letter-spacing:.3em;color:#B08D42;text-transform:uppercase}
@@ -329,26 +339,36 @@ export default function AmplopDigital({
                 </div>
             </div>
 
-            <div className={cn("thanks-pop", thanksVisible && "show")}>
-                <div className="bubble">
-                    <span>{thanksMsg}</span>
-                    <span className={cn("sign", montserrat.className)}>&mdash; {brideNick} &amp; {groomNick} &mdash;</span>
-                </div>
-                <div className="chibi-row">
-                    <canvas ref={brideCanvasRef} />
-                    <canvas ref={groomCanvasRef} className="chibi-jump" />
-                </div>
-            </div>
+            {/*
+              Popup & partikel dipasang lewat portal ke <body>. Section undangan dianimasikan
+              framer-motion, dan ancestor ber-transform bikin containing block baru sehingga
+              position:fixed berhenti mengacu ke viewport — popup jadi nyangkut di tengah halaman.
+            */}
+            {mounted && createPortal(
+                <div className="amplop-digital-root">
+                    <div className={cn("thanks-pop", thanksVisible && "show")}>
+                        <div className="bubble">
+                            <span>{thanksMsg}</span>
+                            <span className={cn("sign", montserrat.className)}>&mdash; {brideNick} &amp; {groomNick} &mdash;</span>
+                        </div>
+                        <div className="chibi-row">
+                            <canvas ref={brideCanvasRef} width={CHIBI_W} height={CHIBI_H} />
+                            <canvas ref={groomCanvasRef} className="chibi-jump" width={CHIBI_W} height={CHIBI_H} />
+                        </div>
+                    </div>
 
-            {particles.map(p => (
-                <span
-                    key={p.id}
-                    className="heart-p"
-                    style={{ left: p.left, top: p.top, ["--dx" as unknown as string]: `${p.dx}px`, ["--rot" as unknown as string]: `${p.rot}deg` }}
-                >
-                    {p.glyph}
-                </span>
-            ))}
+                    {particles.map(p => (
+                        <span
+                            key={p.id}
+                            className="heart-p"
+                            style={{ left: p.left, top: p.top, ["--dx" as unknown as string]: `${p.dx}px`, ["--rot" as unknown as string]: `${p.rot}deg` }}
+                        >
+                            {p.glyph}
+                        </span>
+                    ))}
+                </div>,
+                document.body
+            )}
         </div>
     )
 }
