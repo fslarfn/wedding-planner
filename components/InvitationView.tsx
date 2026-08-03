@@ -226,13 +226,22 @@ export default function InvitationView() {
                         exit={{ opacity: 0, transition: { duration: 0.9, ease: "easeInOut" } }}
                     >
                         {settings?.cover_photo_url ? (
-                            <motion.img
-                                src={settings.cover_photo_url}
-                                alt=""
-                                className="absolute inset-0 w-full h-full object-cover"
+                            // Animasi zoom dipindah ke wrapper karena next/image tidak bisa
+                            // langsung jadi motion component.
+                            <motion.div
+                                className="absolute inset-0"
                                 initial={{ scale: 1 }}
                                 exit={{ scale: 1.08, transition: { duration: 1.1, ease: "easeInOut" } }}
-                            />
+                            >
+                                <NextImage
+                                    src={settings.cover_photo_url}
+                                    alt=""
+                                    fill
+                                    sizes="100vw"
+                                    priority
+                                    className="object-cover"
+                                />
+                            </motion.div>
                         ) : (
                             <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(160deg, ${GREEN}, #12241d)` }} />
                         )}
@@ -286,7 +295,14 @@ export default function InvitationView() {
                 {/* HERO (+ Countdown menyatu di foto yang sama, full layar) */}
                 <section id="beranda" className="relative min-h-dvh flex flex-col">
                     {settings?.hero_photo_url ? (
-                        <img src={settings.hero_photo_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        <NextImage
+                            src={settings.hero_photo_url}
+                            alt=""
+                            fill
+                            sizes="100vw"
+                            priority
+                            className="object-cover"
+                        />
                     ) : (
                         <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(160deg, ${GREEN}, #12241d)` }} />
                     )}
@@ -329,7 +345,13 @@ export default function InvitationView() {
                     )}>
                         {settings?.quote_image_url ? (
                             <>
-                                <img src={settings.quote_image_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                                <NextImage
+                                    src={settings.quote_image_url}
+                                    alt=""
+                                    fill
+                                    sizes="100vw"
+                                    className="object-cover"
+                                />
                                 <div className="absolute inset-0 bg-black/25" />
                             </>
                         ) : (
@@ -626,7 +648,13 @@ export default function InvitationView() {
                 {/* CLOSING / TERIMA KASIH */}
                 <section className="relative min-h-dvh flex items-center justify-center px-8 py-16 text-center overflow-hidden text-white">
                     {settings?.closing_photo_url ? (
-                        <img src={settings.closing_photo_url} alt="" className="absolute inset-0 w-full h-full object-cover" />
+                        <NextImage
+                            src={settings.closing_photo_url}
+                            alt=""
+                            fill
+                            sizes="100vw"
+                            className="object-cover"
+                        />
                     ) : (
                         <div className="absolute inset-0" style={{ backgroundImage: `linear-gradient(160deg, ${GREEN}, #12241d)` }} />
                     )}
@@ -739,8 +767,8 @@ export default function InvitationView() {
 
 function CloseupPhoto({ src, className }: { src: string; className?: string }) {
     return (
-        <div className={cn("w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 shadow-lg mx-auto", className)} style={{ borderColor: GOLD }}>
-            <img src={src} alt="" className="w-full h-full object-cover" />
+        <div className={cn("relative w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden border-2 shadow-lg mx-auto", className)} style={{ borderColor: GOLD }}>
+            <NextImage src={src} alt="" fill sizes="112px" className="object-cover" />
         </div>
     )
 }
