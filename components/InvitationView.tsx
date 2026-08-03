@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
+import NextImage from "next/image"
 import { Playfair_Display, Great_Vibes } from "next/font/google"
 import { motion, AnimatePresence } from "framer-motion"
 import { supabase } from "@/lib/supabase"
@@ -479,21 +480,27 @@ export default function InvitationView() {
                                 <p className="text-center opacity-50 text-xs mb-10 font-sans">Ketuk foto untuk memperbesar</p>
                             </Reveal>
                             <div className="grid grid-cols-3 auto-rows-[100px] sm:auto-rows-[120px] md:auto-rows-[150px] gap-2">
-                                {gallery.map((item, idx) => (
+                                {gallery.map((item, idx) => {
+                                    const wide = idx % 5 === 0
+                                    return (
                                     <Reveal
                                         key={item.id}
                                         direction="zoom"
                                         delay={Math.min(idx * 0.05, 0.3)}
-                                        className={cn(idx % 5 === 0 ? "col-span-2 row-span-2" : "col-span-1 row-span-1")}
+                                        className={cn(wide ? "col-span-2 row-span-2" : "col-span-1 row-span-1")}
                                     >
                                         <button
                                             onClick={() => setLightboxIndex(idx)}
                                             className="relative block w-full h-full overflow-hidden rounded-lg group"
                                         >
-                                            <img
+                                            {/* Grid max-w-2xl (672px): petak kecil ~224px, petak lebar ~448px.
+                                                sizes wajib akurat, kalau tidak Next mengunduh varian jauh lebih besar. */}
+                                            <NextImage
                                                 src={item.image_url}
                                                 alt={item.caption || "Galeri"}
-                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                                fill
+                                                sizes={wide ? "(max-width: 672px) 66vw, 448px" : "(max-width: 672px) 33vw, 224px"}
+                                                className="object-cover transition-transform duration-500 group-hover:scale-110"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                             {item.caption && (
@@ -503,7 +510,8 @@ export default function InvitationView() {
                                             )}
                                         </button>
                                     </Reveal>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </div>
                     </section>
@@ -698,10 +706,16 @@ export default function InvitationView() {
                             className="max-w-lg w-full"
                             onClick={(e) => e.stopPropagation()}
                         >
-                            <img
+                            {/* Wadah max-w-lg (512px); minta 1024px agar tetap tajam di layar retina
+                                tanpa menarik file asli yang bisa 24MB. */}
+                            <NextImage
                                 src={gallery[lightboxIndex].image_url}
                                 alt={gallery[lightboxIndex].caption || ""}
-                                className="w-full max-h-[75vh] object-contain rounded-lg"
+                                width={1024}
+                                height={1024}
+                                sizes="(max-width: 512px) 100vw, 512px"
+                                priority
+                                className="w-full h-auto max-h-[75vh] object-contain rounded-lg"
                             />
                             {gallery[lightboxIndex].caption && (
                                 <p className="text-center text-white/80 text-sm mt-3 font-sans">{gallery[lightboxIndex].caption}</p>
