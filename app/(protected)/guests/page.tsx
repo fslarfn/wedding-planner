@@ -357,8 +357,8 @@ Dengan memohon rahmat dan ridho Allah SWT, kami dengan penuh kebahagiaan ingin b
 
 *Ditta & Faisal*
 Yang Insya Allah akan dilaksanakan pada:
-🗓️ Minggu, 16 Agustus 2026
-🕐 11.00 -13.00 WIB
+📅 Minggu, 16 Agustus 2026
+🕐 11.00 - 13.00 WIB
 📍 Aston Imperial Hotel Bekasi
 Jl. KH. Noer Ali No.177, RT.001/RW.005, Kayuringin Jaya, Kec. Bekasi Sel., Kota Bks, Jawa Barat
 
@@ -371,9 +371,10 @@ Atas perhatian Bapak/Ibu/Saudara/i, kami sampaikan terima kasih.
 
 _Wassalamu'alaikum warahmatullahi wabarakatuh._
 
-With Love 🤍
+With Love 💕
 _Ditta & Faisal_`;
-                                                                const url = `https://wa.me/${guest.phone}?text=${encodeURIComponent(message)}`;
+                                                                const phone = guest.phone.replace(/\D/g, "");
+                                                                const url = `https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(message)}`;
                                                                 window.open(url, '_blank');
                                                             }}
                                                             title={guest.phone ? "Kirim Undangan via WhatsApp" : "No HP Kosong"}

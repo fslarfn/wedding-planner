@@ -32,11 +32,11 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
 
     return (
         <div className="flex flex-col h-full bg-slate-950 text-white border-r border-slate-800">
-            <div className="p-6">
+            <div className="shrink-0 p-6">
                 <h1 className="text-xl font-bold text-blue-500 tracking-wider">Planner Ditta & Faisal</h1>
             </div>
 
-            <nav className="flex-1 px-4 space-y-2">
+            <nav className="flex-1 min-h-0 overflow-y-auto px-4 pb-4 space-y-2">
                 {links.map((link) => {
                     const Icon = link.icon
                     const isActive = pathname === link.href
@@ -60,7 +60,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                 })}
             </nav>
 
-            <div className="p-4 border-t border-gray-700">
+            <div className="shrink-0 p-4 border-t border-gray-700">
                 <button
                     onClick={handleLogout}
                     className="flex items-center w-full px-4 py-2 text-red-400 hover:bg-red-900/20 rounded-lg transition-colors"

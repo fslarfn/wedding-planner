@@ -30,7 +30,7 @@ export default function DashboardLayout({
     return (
         <div className="flex h-screen bg-slate-50">
             {/* Desktop Sidebar */}
-            <div className="hidden md:block w-64 h-full">
+            <div className="hidden md:block w-64 h-full shrink-0">
                 <Sidebar />
             </div>
 
