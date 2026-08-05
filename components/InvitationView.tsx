@@ -36,12 +36,36 @@ function formatTanggalPanjang(dateStr?: string | null) {
     return d.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" })
 }
 
-function useCountdown(targetDate?: string | null) {
-    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+// Acara selalu digelar dalam WIB, sementara tamu bisa membuka undangan dari
+// zona waktu mana pun. Semua perhitungan countdown karena itu dikunci ke +07:00
+// supaya angka yang muncul sama untuk semua orang.
+const WIB_OFFSET = "+07:00"
+
+// Kolom jam diisi bebas oleh pengelola ("08:00 - 10:00 WIB", "11.00 - 13.00 WIB",
+// "Pukul 9.30"), jadi yang diambil adalah angka jam pertama yang muncul.
+function parseJamMulai(timeStr?: string | null) {
+    const match = timeStr?.match(/(\d{1,2})[:.](\d{2})/)
+    if (!match) return null
+    const jam = Number(match[1])
+    const menit = Number(match[2])
+    if (jam > 23 || menit > 59) return null
+    return `${String(jam).padStart(2, "0")}:${String(menit).padStart(2, "0")}`
+}
+
+function eventStartTs(dateStr?: string | null, timeStr?: string | null) {
+    if (!dateStr) return null
+    const jam = parseJamMulai(timeStr) ?? "00:00"
+    const ts = new Date(`${dateStr}T${jam}:00${WIB_OFFSET}`).getTime()
+    return Number.isNaN(ts) ? null : ts
+}
+
+const COUNTDOWN_NOL = { days: 0, hours: 0, minutes: 0, seconds: 0 }
+
+function useCountdown(target?: number | null) {
+    const [timeLeft, setTimeLeft] = useState(COUNTDOWN_NOL)
 
     useEffect(() => {
-        if (!targetDate) return
-        const target = new Date(targetDate + "T00:00:00").getTime()
+        if (!target) return
 
         const tick = () => {
             const diff = Math.max(0, target - Date.now())
@@ -55,9 +79,10 @@ function useCountdown(targetDate?: string | null) {
         tick()
         const interval = setInterval(tick, 1000)
         return () => clearInterval(interval)
-    }, [targetDate])
+    }, [target])
 
-    return timeLeft
+    // Tanpa target, jangan tampilkan sisa hitungan acara sebelumnya.
+    return target ? timeLeft : COUNTDOWN_NOL
 }
 
 function addToCalendarLink(dateStr: string, title: string, details: string) {
@@ -135,7 +160,7 @@ export default function InvitationView() {
     const [form, setForm] = useState({ guest_name: guestName, attendance: "Hadir", pax: "1", message: "" })
     const [submitting, setSubmitting] = useState(false)
     const [submitted, setSubmitted] = useState(false)
-    const [nextEventDate, setNextEventDate] = useState<string | null>(null)
+    const [nextEvent, setNextEvent] = useState<{ date: string; ts: number } | null>(null)
 
     useEffect(() => {
         fetchData()
@@ -147,9 +172,17 @@ export default function InvitationView() {
 
     useEffect(() => {
         if (!settings) return
-        const dates = [settings.akad_date, settings.resepsi_date].filter(Boolean) as string[]
-        const future = dates.filter(d => new Date(d + "T00:00:00").getTime() >= Date.now())
-        setNextEventDate((future.length > 0 ? future.sort()[0] : dates.sort()[0]) || null)
+        // Countdown mengejar jam mulai acara, bukan tengah malam tanggalnya —
+        // jadi di pagi hari akad hitungannya masih menuju akad, bukan resepsi.
+        const events = [
+            { date: settings.akad_date, ts: eventStartTs(settings.akad_date, settings.akad_time) },
+            { date: settings.resepsi_date, ts: eventStartTs(settings.resepsi_date, settings.resepsi_time) },
+        ]
+            .filter((e): e is { date: string; ts: number } => Boolean(e.date) && e.ts !== null)
+            .sort((a, b) => a.ts - b.ts)
+
+        const now = Date.now()
+        setNextEvent(events.find(e => e.ts >= now) ?? events[events.length - 1] ?? null)
     }, [settings])
 
     async function fetchData() {
@@ -165,7 +198,7 @@ export default function InvitationView() {
         setLoading(false)
     }
 
-    const countdown = useCountdown(nextEventDate)
+    const countdown = useCountdown(nextEvent?.ts)
 
     function handleOpen() {
         setIsOpened(true)
@@ -263,7 +296,7 @@ export default function InvitationView() {
                                 <Reveal direction="zoom" delay={0.15}>
                                     <h1 className="text-3xl md:text-4xl tracking-wide">{brideNick} &amp; {groomNick}</h1>
                                 </Reveal>
-                                {nextEventDate && <p className="mt-2 text-white/70 text-xs tracking-widest">{formatTanggalPanjang(nextEventDate)}</p>}
+                                {nextEvent && <p className="mt-2 text-white/70 text-xs tracking-widest">{formatTanggalPanjang(nextEvent.date)}</p>}
 
                                 {guestName && (
                                     <div className="mt-6 text-sm text-white/80">
@@ -311,10 +344,10 @@ export default function InvitationView() {
                     <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center text-white px-8 py-10">
                         <p className="uppercase tracking-[0.3em] text-[11px] text-white/70 mb-4"></p>
                         <h1 className="text-4xl md:text-5xl">{brideNick} &amp; {groomNick}</h1>
-                        {nextEventDate && <p className="mt-4 text-white/85 text-sm tracking-wide">{formatTanggalPanjang(nextEventDate)}</p>}
+                        {nextEvent && <p className="mt-4 text-white/85 text-sm tracking-wide">{formatTanggalPanjang(nextEvent.date)}</p>}
                     </div>
 
-                    {nextEventDate && (
+                    {nextEvent && (
                         <Reveal className="relative z-10 px-8 pb-10 text-center text-white">
                             <p className="uppercase tracking-[0.3em] text-[11px] mb-1" style={{ color: GOLD }}>Save The Date</p>
                             <h2 className="text-xl mb-4">Menuju Hari Bahagia</h2>
