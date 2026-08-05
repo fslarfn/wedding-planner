@@ -59,27 +59,43 @@ function eventStartTs(dateStr?: string | null, timeStr?: string | null) {
     return Number.isNaN(ts) ? null : ts
 }
 
-const COUNTDOWN_NOL = { days: 0, hours: 0, minutes: 0, seconds: 0 }
+// Indonesia tidak mengenal DST, jadi akhir hari acara = tepat 24 jam
+// setelah tengah malam WIB tanggal tersebut.
+function akhirHariWibTs(dateStr?: string | null) {
+    if (!dateStr) return null
+    const mulai = new Date(`${dateStr}T00:00:00${WIB_OFFSET}`).getTime()
+    return Number.isNaN(mulai) ? null : mulai + 24 * 60 * 60 * 1000
+}
 
-function useCountdown(target?: number | null) {
+// "menunggu" = acara belum mulai, "hariH" = sudah mulai tapi masih di hari yang
+// sama, "selesai" = hari acara sudah terlewat.
+type FaseAcara = "menunggu" | "hariH" | "selesai"
+
+const COUNTDOWN_NOL = { days: 0, hours: 0, minutes: 0, seconds: 0, fase: "menunggu" as FaseAcara }
+
+function useCountdown(target?: number | null, akhirHariAcara?: number | null) {
     const [timeLeft, setTimeLeft] = useState(COUNTDOWN_NOL)
 
     useEffect(() => {
         if (!target) return
 
         const tick = () => {
-            const diff = Math.max(0, target - Date.now())
+            const now = Date.now()
+            const diff = Math.max(0, target - now)
             setTimeLeft({
                 days: Math.floor(diff / (1000 * 60 * 60 * 24)),
                 hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
                 minutes: Math.floor((diff / (1000 * 60)) % 60),
                 seconds: Math.floor((diff / 1000) % 60),
+                fase: now < target
+                    ? "menunggu"
+                    : akhirHariAcara && now < akhirHariAcara ? "hariH" : "selesai",
             })
         }
         tick()
         const interval = setInterval(tick, 1000)
         return () => clearInterval(interval)
-    }, [target])
+    }, [target, akhirHariAcara])
 
     // Tanpa target, jangan tampilkan sisa hitungan acara sebelumnya.
     return target ? timeLeft : COUNTDOWN_NOL
@@ -198,7 +214,9 @@ export default function InvitationView() {
         setLoading(false)
     }
 
-    const countdown = useCountdown(nextEvent?.ts)
+    // Saat semua acara sudah lewat, nextEvent berisi acara terakhir — jadi
+    // status "hari H"/"selesai" mengacu pada hari acara yang paling akhir.
+    const countdown = useCountdown(nextEvent?.ts, akhirHariWibTs(nextEvent?.date))
 
     function handleOpen() {
         setIsOpened(true)
@@ -349,21 +367,45 @@ export default function InvitationView() {
 
                     {nextEvent && (
                         <Reveal className="relative z-10 px-8 pb-10 text-center text-white">
-                            <p className="uppercase tracking-[0.3em] text-[11px] mb-1" style={{ color: GOLD }}>Save The Date</p>
-                            <h2 className="text-xl mb-4">Menuju Hari Bahagia</h2>
-                            <div className="flex justify-center gap-2.5">
-                                {[
-                                    { label: "Hari", value: countdown.days },
-                                    { label: "Jam", value: countdown.hours },
-                                    { label: "Menit", value: countdown.minutes },
-                                    { label: "Detik", value: countdown.seconds },
-                                ].map((item, i) => (
-                                    <Reveal key={item.label} direction="zoom" delay={i * 0.08} className="rounded-xl px-3 py-2.5 w-16 backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
-                                        <div className="text-2xl font-semibold text-white">{item.value}</div>
-                                        <div className="text-[9px] uppercase tracking-wide mt-1 text-white/70">{item.label}</div>
-                                    </Reveal>
-                                ))}
-                            </div>
+                            {countdown.fase === "menunggu" && (
+                                <>
+                                    <p className="uppercase tracking-[0.3em] text-[11px] mb-1" style={{ color: GOLD }}>Save The Date</p>
+                                    <h2 className="text-xl mb-4">Menuju Hari Bahagia</h2>
+                                    <div className="flex justify-center gap-2.5">
+                                        {[
+                                            { label: "Hari", value: countdown.days },
+                                            { label: "Jam", value: countdown.hours },
+                                            { label: "Menit", value: countdown.minutes },
+                                            { label: "Detik", value: countdown.seconds },
+                                        ].map((item, i) => (
+                                            <Reveal key={item.label} direction="zoom" delay={i * 0.08} className="rounded-xl px-3 py-2.5 w-16 backdrop-blur-sm" style={{ backgroundColor: "rgba(255,255,255,0.15)" }}>
+                                                <div className="text-2xl font-semibold text-white">{item.value}</div>
+                                                <div className="text-[9px] uppercase tracking-wide mt-1 text-white/70">{item.label}</div>
+                                            </Reveal>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+
+                            {countdown.fase === "hariH" && (
+                                <Reveal direction="zoom">
+                                    <p className="uppercase tracking-[0.3em] text-[11px] mb-1" style={{ color: GOLD }}>Hari Ini</p>
+                                    <h2 className="text-2xl mb-3">Hari Bahagia Telah Tiba</h2>
+                                    <p className="text-sm text-white/80 max-w-sm mx-auto leading-relaxed">
+                                        Merupakan suatu kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
+                                    </p>
+                                </Reveal>
+                            )}
+
+                            {countdown.fase === "selesai" && (
+                                <Reveal direction="zoom">
+                                    <p className="uppercase tracking-[0.3em] text-[11px] mb-1" style={{ color: GOLD }}>Terima Kasih</p>
+                                    <h2 className="text-2xl mb-3">Kami Telah Menikah</h2>
+                                    <p className="text-sm text-white/80 max-w-sm mx-auto leading-relaxed">
+                                        Terima kasih atas doa restu dan kehadiran Bapak/Ibu/Saudara/i di hari bahagia kami.
+                                    </p>
+                                </Reveal>
+                            )}
                         </Reveal>
                     )}
 
