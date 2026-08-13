@@ -40,6 +40,19 @@ body {
   background: #2563EB;
 }
 
+/* Dipakai untuk carousel dan deretan filter yang digeser jari: tetap bisa di-scroll,
+   tapi tanpa scrollbar yang merusak tampilan. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 /* Halaman undangan dibuat full-bleed, tanpa scrollbar terlihat */
 .undangan-scroll {
   scrollbar-width: none;
