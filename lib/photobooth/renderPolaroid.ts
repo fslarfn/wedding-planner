@@ -5,7 +5,7 @@
 
 import type { Frame } from "./frames"
 
-export type PolaroidCaption = { names: string; date: string }
+export type PolaroidCaption = { names: string; hashtag: string; date: string }
 
 // JPEG dipilih daripada PNG/WebP: ukurannya jauh lebih kecil untuk foto, dan paling
 // aman diterima Instagram Story maupun galeri bawaan HP.
@@ -79,24 +79,40 @@ function drawCaption(ctx: CanvasRenderingContext2D, frame: Frame, caption: Polar
 
     setLetterSpacing(ctx, `${Math.round(w * 0.012)}px`)
     ctx.fillStyle = INK_SOFT
-    ctx.font = `${Math.round(w * 0.026)}px Georgia, "Times New Roman", serif`
-    ctx.fillText("THE WEDDING OF", center, top + boxH * 0.24)
+    ctx.font = `${Math.round(w * 0.024)}px Georgia, "Times New Roman", serif`
+    ctx.fillText("THE WEDDING OF", center, top + boxH * 0.17)
 
+    // Rangkaian bunga menjorok ke atas sampai setinggi baris nama, jadi lebarnya
+    // dibatasi supaya nama panjang mengecil sendiri alih-alih menabrak ornamen.
     setLetterSpacing(ctx, "0px")
     ctx.fillStyle = INK
     fitFont(
         ctx,
         caption.names,
-        w * 0.86,
+        w * 0.64,
         size => `italic ${size}px Georgia, "Times New Roman", serif`,
-        Math.round(w * 0.082),
+        Math.round(w * 0.078),
     )
-    ctx.fillText(caption.names, center, top + boxH * 0.55)
+    ctx.fillText(caption.names, center, top + boxH * 0.42)
+
+    // Hashtag dan tanggal sejajar dengan bunga di kiri-kanan, jadi dijaga tetap
+    // ramping supaya tidak bertabrakan dengan ornamennya.
+    if (caption.hashtag) {
+        ctx.fillStyle = INK
+        fitFont(
+            ctx,
+            caption.hashtag,
+            w * 0.5,
+            size => `${size}px Georgia, "Times New Roman", serif`,
+            Math.round(w * 0.032),
+        )
+        ctx.fillText(caption.hashtag, center, top + boxH * 0.68)
+    }
 
     setLetterSpacing(ctx, `${Math.round(w * 0.008)}px`)
     ctx.fillStyle = INK_SOFT
-    ctx.font = `${Math.round(w * 0.024)}px Georgia, "Times New Roman", serif`
-    ctx.fillText(caption.date.toUpperCase(), center, top + boxH * 0.82)
+    ctx.font = `${Math.round(w * 0.022)}px Georgia, "Times New Roman", serif`
+    ctx.fillText(caption.date.toUpperCase(), center, top + boxH * 0.87)
     setLetterSpacing(ctx, "0px")
 }
 

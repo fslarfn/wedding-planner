@@ -21,7 +21,7 @@ export type Frame = {
     width: number
     height: number
     /**
-     * Area kosong di bawah bingkai untuk nama mempelai & tanggal.
+     * Area kosong di bawah bingkai untuk nama mempelai, hashtag, dan tanggal.
      * Bingkai yang namanya sudah tercetak di dalam asetnya cukup menghilangkan ini.
      */
     caption?: { y: number; h: number }
@@ -44,10 +44,10 @@ export const FRAMES: Frame[] = [
         width: 1080,
         height: 1620,
         slots: [
-            { x: 72 / 1080, y: 72 / 1620, w: 936 / 1080, h: 639 / 1620 },
-            { x: 72 / 1080, y: 741 / 1620, w: 936 / 1080, h: 639 / 1620 },
+            { x: 72 / 1080, y: 72 / 1620, w: 936 / 1080, h: 594 / 1620 },
+            { x: 72 / 1080, y: 696 / 1620, w: 936 / 1080, h: 594 / 1620 },
         ],
-        caption: { y: 1380 / 1620, h: 240 / 1620 },
+        caption: { y: 1290 / 1620, h: 330 / 1620 },
     },
     {
         id: "strip",

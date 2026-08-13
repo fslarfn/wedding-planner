@@ -26,9 +26,9 @@ const MIN_PRINT_MS = 2200
 
 type Step = "intro" | "nama" | "bingkai" | "kamera" | "mencetak" | "hasil" | "galeri"
 
-type Props = { names: string; dateLabel: string; heroPhotoUrl: string | null }
+type Props = { names: string; hashtag: string; dateLabel: string; heroPhotoUrl: string | null }
 
-export default function PhotoboothFlow({ names, dateLabel, heroPhotoUrl }: Props) {
+export default function PhotoboothFlow({ names, hashtag, dateLabel, heroPhotoUrl }: Props) {
     const [step, setStep] = useState<Step>("intro")
     const [guestName, setGuestName] = useState("")
     const [frame, setFrame] = useState<Frame>(FRAMES[0])
@@ -49,7 +49,7 @@ export default function PhotoboothFlow({ names, dateLabel, heroPhotoUrl }: Props
 
         try {
             const [blob] = await Promise.all([
-                renderPolaroid(frame, photos, { names, date: dateLabel }),
+                renderPolaroid(frame, photos, { names, hashtag, date: dateLabel }),
                 sleep(MIN_PRINT_MS),
             ])
 
@@ -73,7 +73,7 @@ export default function PhotoboothFlow({ names, dateLabel, heroPhotoUrl }: Props
         } finally {
             photos.forEach(p => p.close())
         }
-    }, [frame, names, dateLabel, guestName, releaseResult])
+    }, [frame, names, hashtag, dateLabel, guestName, releaseResult])
 
     function retake() {
         releaseResult()

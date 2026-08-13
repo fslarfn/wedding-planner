@@ -2,6 +2,10 @@ import type { Metadata } from "next"
 import { supabase } from "@/lib/supabase"
 import PhotoboothFlow from "@/components/photobooth/PhotoboothFlow"
 
+// Tagar acara, dicetak di bawah nama pada setiap bingkai polaroid. Satu-satunya
+// tempat untuk mengubahnya.
+const HASHTAG = "#DITakenbySAL"
+
 // Ratusan tamu bisa memindai QR dalam waktu berdekatan, jadi halaman ini di-cache dan
 // disegarkan berkala — bukan dirender ulang tiap permintaan — tapi tetap ikut berubah
 // kalau nama atau tanggal di pengaturan undangan diperbarui tanpa perlu deploy ulang.
@@ -56,6 +60,7 @@ export default async function PhotoboothPage() {
     return (
         <PhotoboothFlow
             names={coupleNames(data)}
+            hashtag={HASHTAG}
             dateLabel={eventDate(data)}
             heroPhotoUrl={data?.hero_photo_url || data?.cover_photo_url || null}
         />
