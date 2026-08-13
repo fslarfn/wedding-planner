@@ -83,31 +83,44 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
         return createImageBitmap(canvas)
     }
 
-    async function runSequence() {
+    /**
+     * Satu tekanan tombol = satu jepretan. Bingkai berisi beberapa foto sengaja tidak
+     * memotret beruntun sendiri: tamu perlu jeda untuk berganti gaya, dan rentetan
+     * otomatis membuat foto kedua dan ketiga tertangkap saat mereka belum siap.
+     */
+    async function captureOne() {
         if (running) return
         setRunning(true)
 
-        while (shotsRef.current.length < count) {
-            for (let n = 3; n > 0; n--) {
-                setCountdown(n)
-                await sleep(900)
-            }
-            setCountdown(null)
-
-            const shot = await grabFrame()
-            setFlash(true)
-            setTimeout(() => setFlash(false), 220)
-
-            if (shot) {
-                shotsRef.current.push(shot)
-                setTaken(shotsRef.current.length)
-            }
-            if (shotsRef.current.length < count) await sleep(800)
+        for (let n = 3; n > 0; n--) {
+            setCountdown(n)
+            await sleep(900)
         }
+        setCountdown(null)
 
-        await sleep(400)
-        stopCamera()
-        onDone(shotsRef.current)
+        const shot = await grabFrame()
+        setFlash(true)
+        setTimeout(() => setFlash(false), 220)
+
+        if (shot) {
+            shotsRef.current.push(shot)
+            setTaken(shotsRef.current.length)
+        }
+        setRunning(false)
+
+        // Jepretan terakhir langsung lanjut ke pencetakan; tidak ada gunanya menahan
+        // tamu di layar kamera setelah semua slot terisi.
+        if (shotsRef.current.length >= count) {
+            await sleep(500)
+            stopCamera()
+            onDone(shotsRef.current)
+        }
+    }
+
+    function captureLabel() {
+        if (running) return "Bersiap..."
+        if (taken === 0) return count > 1 ? `Ambil Foto (1 dari ${count})` : "Ambil Foto"
+        return `Foto Lagi (${taken + 1} dari ${count})`
     }
 
     async function handleFallbackFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -194,13 +207,13 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
                     </button>
                 ) : (
                     <button
-                        onClick={runSequence}
+                        onClick={captureOne}
                         disabled={running}
                         className="w-full py-4 text-xs tracking-[0.25em] uppercase text-white disabled:opacity-40"
                         style={{ backgroundColor: GREEN }}
                     >
                         <Camera className="inline w-4 h-4 mr-2" />
-                        {running ? "Bersiap..." : count > 1 ? `Mulai Ambil ${count} Foto` : "Ambil Foto"}
+                        {captureLabel()}
                     </button>
                 )}
 
