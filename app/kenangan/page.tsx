@@ -19,10 +19,13 @@ async function getSettings() {
     return data
 }
 
+// Mempelai wanita disebut lebih dulu — "Ditta & Faisal" — mengikuti penyebutan yang
+// dipakai pasangan ini di dashboard. Satu-satunya sumber nama untuk seluruh halaman
+// photobooth: beranda, judul tab, dan tulisan di bingkai polaroid.
 function coupleNames(data: Record<string, string> | null) {
     const groom = data?.groom_nickname || data?.groom_name || "Mempelai Pria"
     const bride = data?.bride_nickname || data?.bride_name || "Mempelai Wanita"
-    return `${groom} & ${bride}`
+    return `${bride} & ${groom}`
 }
 
 function eventDate(data: Record<string, string> | null) {
