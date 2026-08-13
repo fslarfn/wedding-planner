@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+import { adminClient, missingServiceKey, rejectUnauthorized } from "@/lib/photobooth/adminAuth"
 
 // Daftar lengkap kenangan untuk dashboard, termasuk yang disembunyikan.
 //
@@ -6,18 +6,12 @@ import { createClient } from "@supabase/supabase-js"
 // supabase/photobooth.sql), jadi daftar penuh harus lewat service role di server.
 
 export async function GET(request: Request) {
-    const expected = process.env.PHOTOBOOTH_ADMIN_KEY
-    if (!expected || request.headers.get("x-photobooth-key") !== expected) {
-        return Response.json({ error: "Kunci admin tidak cocok." }, { status: 401 })
-    }
+    const rejected = rejectUnauthorized(request)
+    if (rejected) return rejected
 
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!url || !serviceKey) {
-        return Response.json({ error: "SUPABASE_SERVICE_ROLE_KEY belum diatur." }, { status: 500 })
-    }
+    const supabase = adminClient()
+    if (!supabase) return missingServiceKey()
 
-    const supabase = createClient(url, serviceKey, { auth: { persistSession: false } })
     const { data, error } = await supabase
         .from("photobooth_photos")
         .select("*")
