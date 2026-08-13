@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+import { adminClient, missingServiceKey, rejectUnauthorized } from "@/lib/photobooth/adminAuth"
 
 // Menghapus dan menyembunyikan kenangan hanya boleh lewat sini.
 //
@@ -9,19 +9,6 @@ import { createClient } from "@supabase/supabase-js"
 
 const BUCKET = "photobooth"
 
-function adminClient() {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    if (!url || !serviceKey) return null
-    return createClient(url, serviceKey, { auth: { persistSession: false } })
-}
-
-function authorized(request: Request) {
-    const expected = process.env.PHOTOBOOTH_ADMIN_KEY
-    if (!expected) return false
-    return request.headers.get("x-photobooth-key") === expected
-}
-
 /** Mengubah URL publik Storage kembali menjadi path di dalam bucket. */
 function storagePath(imageUrl: string): string | null {
     const marker = `/storage/v1/object/public/${BUCKET}/`
@@ -30,14 +17,11 @@ function storagePath(imageUrl: string): string | null {
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
-    if (!authorized(request)) {
-        return Response.json({ error: "Kunci admin tidak cocok." }, { status: 401 })
-    }
+    const rejected = rejectUnauthorized(request)
+    if (rejected) return rejected
 
     const supabase = adminClient()
-    if (!supabase) {
-        return Response.json({ error: "SUPABASE_SERVICE_ROLE_KEY belum diatur." }, { status: 500 })
-    }
+    if (!supabase) return missingServiceKey()
 
     const { id } = await params
 
@@ -63,14 +47,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
 /** Menyembunyikan atau menampilkan kembali kenangan di galeri tamu. */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-    if (!authorized(request)) {
-        return Response.json({ error: "Kunci admin tidak cocok." }, { status: 401 })
-    }
+    const rejected = rejectUnauthorized(request)
+    if (rejected) return rejected
 
     const supabase = adminClient()
-    if (!supabase) {
-        return Response.json({ error: "SUPABASE_SERVICE_ROLE_KEY belum diatur." }, { status: 500 })
-    }
+    if (!supabase) return missingServiceKey()
 
     const { id } = await params
     const body = await request.json().catch(() => null)

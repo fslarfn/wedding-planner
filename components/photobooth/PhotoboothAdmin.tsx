@@ -13,8 +13,9 @@ import {
 // di Environment Variables.
 const KEY_STORAGE = "photobooth_admin_key"
 
-const KEY_REJECTED =
-    "Kunci admin ditolak. Daftar di bawah hanya menampilkan kenangan yang terlihat tamu."
+const KEY_REJECTED = "Kunci admin ditolak."
+
+const FALLBACK_NOTE = " Daftar di bawah hanya menampilkan kenangan yang terlihat tamu."
 
 type AdminMemory = Memory & { is_hidden: boolean }
 type LoadResult = { items: AdminMemory[]; key: string | null; error: string | null }
@@ -42,8 +43,19 @@ async function loadMemories(key: string | null): Promise<LoadResult> {
         return { items: json.items as AdminMemory[], key, error: null }
     }
 
-    localStorage.removeItem(KEY_STORAGE)
-    return { items: await publicList(), key: null, error: KEY_REJECTED }
+    // Server membedakan "kunci salah" (401) dari "kunci belum ada di server" (503),
+    // jadi pesannya diteruskan apa adanya daripada ditebak sendiri di sini.
+    const json = await res.json().catch(() => null)
+
+    // Hanya kunci yang benar-benar ditolak yang dibuang. Kalau servernya yang belum
+    // dikonfigurasi, kunci tersimpan dibiarkan supaya tidak perlu diketik ulang.
+    if (res.status === 401) localStorage.removeItem(KEY_STORAGE)
+
+    return {
+        items: await publicList(),
+        key: null,
+        error: (json?.error ?? KEY_REJECTED) + FALLBACK_NOTE,
+    }
 }
 
 export default function PhotoboothAdmin({ link }: { link: string }) {
@@ -52,7 +64,14 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
     const [adminKey, setAdminKey] = useState<string | null>(null)
     const [keyError, setKeyError] = useState<string | null>(null)
     const [busyId, setBusyId] = useState<string | null>(null)
+    const [actionError, setActionError] = useState<string | null>(null)
     const [copied, setCopied] = useState(false)
+
+    /** Tombol yang gagal diam-diam lebih membingungkan daripada pesan galat. */
+    async function reportFailure(res: Response) {
+        const json = await res.json().catch(() => null)
+        setActionError(json?.error ?? `Gagal memproses (status ${res.status}).`)
+    }
 
     const apply = useCallback((result: LoadResult) => {
         setItems(result.items)
@@ -71,7 +90,8 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
     }, [apply])
 
     async function askKey() {
-        const value = window.prompt("Masukkan kunci admin photobooth (PHOTOBOOTH_ADMIN_KEY):")
+        // Papan ketik HP gemar menyisipkan spasi di ujung.
+        const value = window.prompt("Masukkan kunci admin photobooth (PHOTOBOOTH_ADMIN_KEY):")?.trim()
         if (!value) return
         localStorage.setItem(KEY_STORAGE, value)
         setLoading(true)
@@ -82,6 +102,7 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
         if (!adminKey) return askKey()
 
         setBusyId(item.id)
+        setActionError(null)
         const res = await fetch(`/api/photobooth/${item.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "x-photobooth-key": adminKey },
@@ -91,6 +112,8 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
 
         if (res.ok) {
             setItems(prev => prev.map(m => (m.id === item.id ? { ...m, is_hidden: !m.is_hidden } : m)))
+        } else {
+            await reportFailure(res)
         }
     }
 
@@ -99,6 +122,7 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
         if (!confirm(`Hapus permanen kenangan dari ${item.guest_name}?`)) return
 
         setBusyId(item.id)
+        setActionError(null)
         const res = await fetch(`/api/photobooth/${item.id}`, {
             method: "DELETE",
             headers: { "x-photobooth-key": adminKey },
@@ -106,6 +130,7 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
         setBusyId(null)
 
         if (res.ok) setItems(prev => prev.filter(m => m.id !== item.id))
+        else await reportFailure(res)
     }
 
     async function copyLink() {
@@ -179,8 +204,13 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
                 </CardHeader>
                 <CardContent>
                     {keyError && (
-                        <p className="text-xs text-amber-600 bg-amber-50 border border-amber-100 rounded-lg p-3 mb-4">
+                        <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded-lg p-3 mb-4 leading-relaxed">
                             {keyError}
+                        </p>
+                    )}
+                    {actionError && (
+                        <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-lg p-3 mb-4 leading-relaxed">
+                            {actionError}
                         </p>
                     )}
                     {!adminKey && !keyError && (
