@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { fetchMemories, formatStamp, type Memory } from "@/lib/photobooth/storage"
 import {
-    Camera, Check, Copy, Download, Eye, EyeOff, KeyRound, Loader2, QrCode, Trash2,
+    Camera, Check, Copy, Download, Eye, EyeOff, FileText, KeyRound, Loader2, QrCode, Trash2,
 } from "lucide-react"
 
 // Kunci admin disimpan di browser pengelola, bukan di bundle aplikasi, supaya tamu
@@ -175,11 +175,18 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
                             </div>
                         </div>
 
-                        <a href="/api/photobooth/qr?size=2048" download="qr-photobooth.png">
-                            <Button className="bg-pink-600 hover:bg-pink-700 text-white">
-                                <Download className="w-4 h-4 mr-2" /> Unduh QR Resolusi Cetak
-                            </Button>
-                        </a>
+                        <div className="flex flex-wrap gap-2">
+                            <a href="/pamflet" target="_blank" rel="noopener">
+                                <Button className="bg-pink-600 hover:bg-pink-700 text-white">
+                                    <FileText className="w-4 h-4 mr-2" /> Pamflet A4 Siap Cetak
+                                </Button>
+                            </a>
+                            <a href="/api/photobooth/qr?size=2048" download="qr-photobooth.png">
+                                <Button variant="outline">
+                                    <Download className="w-4 h-4 mr-2" /> Unduh QR Saja
+                                </Button>
+                            </a>
+                        </div>
 
                         <p className="text-[11px] text-slate-400 leading-relaxed">
                             Minta tamu memindai QR ini dengan kamera bawaan HP. QR yang dibuka dari dalam
