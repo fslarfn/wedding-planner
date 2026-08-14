@@ -1,10 +1,17 @@
 "use client"
 
 import { useCallback, useEffect, useRef, useState } from "react"
-import { Camera, ImageUp, Power, X } from "lucide-react"
+import { Camera, ImageUp, Power, SwitchCamera, X } from "lucide-react"
 import { GOLD, GREEN, INK } from "@/lib/photobooth/theme"
 
 const sleep = (ms: number) => new Promise(res => setTimeout(res, ms))
+
+type Facing = "user" | "environment"
+
+const FACING_LABEL: Record<Facing, string> = {
+    user: "kamera depan",
+    environment: "kamera belakang",
+}
 
 type Props = {
     /** Berapa jepretan yang dibutuhkan bingkai terpilih. */
@@ -21,12 +28,20 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
     const shotsRef = useRef<ImageBitmap[]>([])
     const fileInputRef = useRef<HTMLInputElement>(null)
 
+    const [facing, setFacing] = useState<Facing>("user")
     const [ready, setReady] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const [note, setNote] = useState<string | null>(null)
     const [taken, setTaken] = useState(0)
     const [countdown, setCountdown] = useState<number | null>(null)
     const [flash, setFlash] = useState(false)
     const [running, setRunning] = useState(false)
+    const [switching, setSwitching] = useState(false)
+
+    // Hanya kamera depan yang dicerminkan, supaya terasa seperti bercermin. Kamera
+    // belakang dibiarkan apa adanya — kalau ikut dicerminkan, tulisan apa pun di
+    // latar belakang akan terbaca terbalik.
+    const mirrored = facing === "user"
 
     const stopCamera = useCallback(() => {
         streamRef.current?.getTracks().forEach(t => t.stop())
@@ -37,10 +52,38 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
     // baterai HP tamu terkuras.
     useEffect(() => stopCamera, [stopCamera])
 
+    /**
+     * @param strict Memaksa sisi kamera yang diminta. Dipakai saat tamu menekan tombol
+     *               ganti kamera, supaya perangkat tanpa kamera itu menolak dengan
+     *               jelas alih-alih diam-diam memberi kamera yang sama.
+     */
+    async function openStream(mode: Facing, strict: boolean): Promise<MediaStream> {
+        return navigator.mediaDevices.getUserMedia({
+            // Dibatasi 1440 supaya HP kelas bawah tidak kehabisan memori saat
+            // menggabungkan beberapa jepretan sekaligus.
+            video: {
+                facingMode: strict ? { exact: mode } : mode,
+                width: { ideal: 1440 },
+                height: { ideal: 1440 },
+            },
+            audio: false,
+        })
+    }
+
+    async function attach(stream: MediaStream) {
+        streamRef.current = stream
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream
+            await videoRef.current.play()
+        }
+        setReady(true)
+    }
+
     // Kamera sengaja dinyalakan lewat tombol, bukan otomatis saat layar terbuka:
     // Safari iOS hanya mengizinkan permintaan kamera yang lahir dari sentuhan user.
     async function startCamera() {
         setError(null)
+        setNote(null)
 
         if (!navigator.mediaDevices?.getUserMedia) {
             setError("Browser ini tidak mengizinkan akses kamera.")
@@ -48,20 +91,36 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
         }
 
         try {
-            const stream = await navigator.mediaDevices.getUserMedia({
-                // Dibatasi 1440 supaya HP kelas bawah tidak kehabisan memori saat
-                // menggabungkan beberapa jepretan sekaligus.
-                video: { facingMode: "user", width: { ideal: 1440 }, height: { ideal: 1440 } },
-                audio: false,
-            })
-            streamRef.current = stream
-            if (videoRef.current) {
-                videoRef.current.srcObject = stream
-                await videoRef.current.play()
-            }
-            setReady(true)
+            await attach(await openStream(facing, false))
         } catch {
             setError("Kamera tidak bisa dibuka. Izinkan akses kamera, atau pakai tombol di bawah.")
+        }
+    }
+
+    async function switchCamera() {
+        if (running || switching) return
+
+        const next: Facing = facing === "user" ? "environment" : "user"
+        setSwitching(true)
+        setNote(null)
+
+        // Banyak HP tidak bisa membuka dua kamera sekaligus, jadi yang lama dimatikan
+        // dulu — dan dinyalakan kembali kalau yang baru ternyata tidak ada.
+        stopCamera()
+
+        try {
+            await attach(await openStream(next, true))
+            setFacing(next)
+        } catch {
+            setNote(`${FACING_LABEL[next][0].toUpperCase()}${FACING_LABEL[next].slice(1)} tidak tersedia di HP ini.`)
+            try {
+                await attach(await openStream(facing, false))
+            } catch {
+                setReady(false)
+                setError("Kamera terputus. Nyalakan ulang, ya.")
+            }
+        } finally {
+            setSwitching(false)
         }
     }
 
@@ -75,10 +134,12 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
         const ctx = canvas.getContext("2d")
         if (!ctx) return null
 
-        // Pratinjau dicerminkan supaya terasa seperti bercermin. Hasilnya ikut
-        // dicerminkan agar sama persis dengan yang dilihat tamu saat berpose.
-        ctx.translate(canvas.width, 0)
-        ctx.scale(-1, 1)
+        // Dicerminkan di sini, bukan saat menyusun polaroid, supaya tiap jepretan
+        // membawa sisi kameranya sendiri — tamu boleh berganti kamera di tengah sesi.
+        if (mirrored) {
+            ctx.translate(canvas.width, 0)
+            ctx.scale(-1, 1)
+        }
         ctx.drawImage(video, 0, 0)
         return createImageBitmap(canvas)
     }
@@ -89,7 +150,7 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
      * otomatis membuat foto kedua dan ketiga tertangkap saat mereka belum siap.
      */
     async function captureOne() {
-        if (running) return
+        if (running || switching) return
         setRunning(true)
 
         for (let n = 3; n > 0; n--) {
@@ -161,10 +222,22 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
                     playsInline
                     muted
                     className="w-full h-full object-cover"
-                    style={{ transform: "scaleX(-1)" }}
+                    style={{ transform: mirrored ? "scaleX(-1)" : "none" }}
                 />
 
                 {flash && <div className="absolute inset-0 bg-white" />}
+
+                {ready && !error && (
+                    <button
+                        onClick={switchCamera}
+                        disabled={running || switching}
+                        aria-label="Ganti kamera depan atau belakang"
+                        title="Ganti kamera depan/belakang"
+                        className="absolute top-3 right-3 p-3 rounded-full bg-black/45 text-white backdrop-blur-sm disabled:opacity-40"
+                    >
+                        <SwitchCamera className="w-5 h-5" />
+                    </button>
+                )}
 
                 {countdown !== null && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
@@ -191,9 +264,21 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
                 )}
             </div>
 
-            <p className="text-xs tracking-[0.25em] uppercase" style={{ color: GOLD }}>
-                {taken} dari {count} foto
-            </p>
+            <div className="text-center space-y-1">
+                <p className="text-xs tracking-[0.25em] uppercase" style={{ color: GOLD }}>
+                    {taken} dari {count} foto
+                </p>
+                {ready && !error && (
+                    <p className="text-[10px] tracking-[0.2em] uppercase" style={{ color: INK, opacity: 0.45 }}>
+                        {switching ? "Mengganti kamera..." : `Memakai ${FACING_LABEL[facing]}`}
+                    </p>
+                )}
+                {note && (
+                    <p className="text-[11px] leading-relaxed pt-1" style={{ color: INK, opacity: 0.7 }}>
+                        {note}
+                    </p>
+                )}
+            </div>
 
             <div className="w-full space-y-3">
                 {!ready || error ? (
@@ -208,7 +293,7 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
                 ) : (
                     <button
                         onClick={captureOne}
-                        disabled={running}
+                        disabled={running || switching}
                         className="w-full py-4 text-xs tracking-[0.25em] uppercase text-white disabled:opacity-40"
                         style={{ backgroundColor: GREEN }}
                     >
@@ -233,7 +318,7 @@ export default function CameraCapture({ count, aspect, onDone, onCancel }: Props
                 ref={fileInputRef}
                 type="file"
                 accept="image/*"
-                capture="user"
+                capture={facing}
                 onChange={handleFallbackFile}
                 className="hidden"
             />
