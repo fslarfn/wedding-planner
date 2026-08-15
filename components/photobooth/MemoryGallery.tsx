@@ -1,19 +1,29 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import NextImage from "next/image"
 import { ArrowLeft, Loader2 } from "lucide-react"
 import { fetchMemories, formatStamp, type Memory } from "@/lib/photobooth/storage"
+import { getFrame } from "@/lib/photobooth/frames"
 import { GOLD, INK } from "@/lib/photobooth/theme"
+
+// Ditampilkan bertahap. Satu polaroid berukuran 300-500 KB, jadi memuat seluruh
+// galeri sekaligus berarti menarik puluhan megabyte lewat jaringan venue yang
+// dipakai ratusan tamu bersamaan.
+const PER_HALAMAN = 24
 
 type Props = { names: string; onBack: () => void }
 
 export default function MemoryGallery({ names, onBack }: Props) {
     const [items, setItems] = useState<Memory[]>([])
     const [loading, setLoading] = useState(true)
+    const [tampil, setTampil] = useState(PER_HALAMAN)
     const [selected, setSelected] = useState<Memory | null>(null)
 
     useEffect(() => {
-        fetchMemories()
+        // Barisnya murah; yang mahal gambarnya. Diambil banyak, dirender sedikit demi
+        // sedikit.
+        fetchMemories(120)
             .then(setItems)
             .catch(() => setItems([]))
             .finally(() => setLoading(false))
@@ -45,24 +55,51 @@ export default function MemoryGallery({ names, onBack }: Props) {
                     Belum ada kenangan. Jadilah yang pertama!
                 </p>
             ) : (
-                <div className="columns-2 md:columns-3 gap-4 space-y-4">
-                    {items.map(item => (
-                        <button
-                            key={item.id}
-                            onClick={() => setSelected(item)}
-                            className="break-inside-avoid block w-full text-left bg-white p-2 pb-3 shadow-md"
-                        >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={item.image_url} alt={item.guest_name} className="w-full h-auto" />
-                            <p className="mt-2 text-[11px] tracking-[0.15em] uppercase truncate" style={{ color: INK }}>
-                                {item.guest_name}
-                            </p>
-                            <p className="text-[9px] tracking-[0.1em]" style={{ color: INK, opacity: 0.45 }}>
-                                {formatStamp(item.created_at)}
-                            </p>
-                        </button>
-                    ))}
-                </div>
+                <>
+                    <div className="columns-2 md:columns-3 gap-4 space-y-4">
+                        {items.slice(0, tampil).map(item => {
+                            // Rasio bingkai tersimpan di frame_id, jadi tinggi gambar sudah
+                            // diketahui sebelum berkasnya tiba — tata letak tidak melompat.
+                            const frame = getFrame(item.frame_id)
+                            return (
+                                <button
+                                    key={item.id}
+                                    onClick={() => setSelected(item)}
+                                    className="break-inside-avoid block w-full text-left bg-white p-2 pb-3 shadow-md"
+                                >
+                                    {/* next/image menyajikan versi seukuran tampilan lewat cache
+                                        Vercel, bukan berkas 400 KB dari Supabase. */}
+                                    <NextImage
+                                        src={item.image_url}
+                                        alt={item.guest_name}
+                                        width={frame.width}
+                                        height={frame.height}
+                                        sizes="(max-width: 768px) 45vw, 30vw"
+                                        className="w-full h-auto"
+                                    />
+                                    <p className="mt-2 text-[11px] tracking-[0.15em] uppercase truncate" style={{ color: INK }}>
+                                        {item.guest_name}
+                                    </p>
+                                    <p className="text-[9px] tracking-[0.1em]" style={{ color: INK, opacity: 0.45 }}>
+                                        {formatStamp(item.created_at)}
+                                    </p>
+                                </button>
+                            )
+                        })}
+                    </div>
+
+                    {tampil < items.length && (
+                        <div className="text-center mt-10">
+                            <button
+                                onClick={() => setTampil(t => t + PER_HALAMAN)}
+                                className="px-10 py-4 text-[11px] tracking-[0.3em] uppercase border"
+                                style={{ borderColor: GOLD, color: INK }}
+                            >
+                                Muat Lebih Banyak
+                            </button>
+                        </div>
+                    )}
+                </>
             )}
 
             {selected && (
