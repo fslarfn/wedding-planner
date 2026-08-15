@@ -1,6 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import NextImage from "next/image"
+import { getFrame } from "@/lib/photobooth/frames"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { fetchMemories, formatStamp, type Memory } from "@/lib/photobooth/storage"
@@ -243,10 +245,14 @@ export default function PhotoboothAdmin({ link }: { link: string }) {
                                     key={item.id}
                                     className="break-inside-avoid rounded-xl overflow-hidden bg-white shadow-md border border-slate-100"
                                 >
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
+                                    {/* Lewat next/image supaya ratusan kenangan tidak ditarik
+                                        dalam ukuran penuh setiap kali halaman ini dibuka. */}
+                                    <NextImage
                                         src={item.image_url}
                                         alt={item.guest_name}
+                                        width={getFrame(item.frame_id).width}
+                                        height={getFrame(item.frame_id).height}
+                                        sizes="(max-width: 768px) 45vw, 22vw"
                                         className={item.is_hidden ? "w-full h-auto opacity-40" : "w-full h-auto"}
                                     />
                                     <div className="p-3">
